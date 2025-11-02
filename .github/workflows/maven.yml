@@ -1,4 +1,3 @@
-
 name: Build & Test (Maven)
 
 on:
@@ -10,6 +9,7 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -21,14 +21,16 @@ jobs:
           distribution: 'temurin'
           cache: maven
 
-      - name: Build with Maven
-        run: mvn -B clean package
+      # 🧩 Step 1: Build all modules once so local dependencies exist
+      - name: Build all modules
+        run: mvn -B clean install -DskipTests
 
+      # 🧪 Step 2: Run module-specific test suites
       - name: Verify Core Module
-        run: mvn -pl cmdb-core test
-      
+        run: mvn -B -pl cmdb-core test
+
       - name: Verify Importer Module
-        run: mvn -pl cmdb-importers test
-  
+        run: mvn -B -pl cmdb-importers --also-make test
+
       - name: Verify UI Module
-        run: mvn -pl cmdb-ui test
+        run: mvn -B -pl cmdb-ui --also-make test
