@@ -24,5 +24,8 @@ jobs:
       - name: Build with Maven
         run: mvn -B clean package
 
+      - name: Verify Core Module
+        run: mvn -pl cmdb-core test
+  
       - name: Verify UI Module
         run: mvn -pl cmdb-ui test

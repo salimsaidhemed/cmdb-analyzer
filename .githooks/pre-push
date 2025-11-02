@@ -1,0 +1,12 @@
+#!/bin/bash
+echo "🔍 Running pre-push checks..."
+
+mvn -q clean test
+status=$?
+
+if [ $status -ne 0 ]; then
+  echo "❌ Tests failed — push aborted."
+  exit 1
+else
+  echo "✅ All tests passed — proceeding with push."
+fi
