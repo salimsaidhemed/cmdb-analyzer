@@ -28,7 +28,7 @@ jobs:
         run: mvn -pl cmdb-core test
       
       - name: Verify Importer Module
-        run: mvn -pl cmdb-importer test
+        run: mvn -pl cmdb-importers test
   
       - name: Verify UI Module
         run: mvn -pl cmdb-ui test
