@@ -141,7 +141,7 @@
                     <Label text="Details" styleClass="panel-heading"/>
                     <Label text="Selection metadata" styleClass="panel-caption"/>
                 </VBox>
-                <VBox spacing="12" VBox.vgrow="ALWAYS" styleClass="details-content">
+                <VBox fx:id="detailsContent" spacing="12" VBox.vgrow="ALWAYS" styleClass="details-content">
                     <VBox spacing="5" styleClass="detail-card">
                         <Label text="Selected CI" styleClass="field-label"/>
                         <Label text="None selected" styleClass="field-value"/>

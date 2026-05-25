@@ -1,14 +1,16 @@
 package com.cmdbanalyzer.controller;
 
+import com.cmdbanalyzer.controller.preview.CmdbTableMapper;
+import com.cmdbanalyzer.controller.preview.ImportPreviewViewFactory;
+import com.cmdbanalyzer.controller.preview.ImportPreviewViewModel;
 import com.cmdbanalyzer.model.CmdbWorkbook;
-import com.cmdbanalyzer.model.ParserWarning;
 import com.cmdbanalyzer.parser.ParseResult;
 import com.cmdbanalyzer.service.AppTaskExecutor;
 import com.cmdbanalyzer.service.CmdbImportService;
 import com.cmdbanalyzer.service.UiNotificationService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
-import javafx.geometry.Pos;
+import javafx.scene.Node;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
@@ -23,7 +25,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.List;
 
 /**
  * Handles UI events for the main application window.
@@ -34,7 +35,9 @@ public class MainController {
 
     private final AppTaskExecutor taskExecutor = new AppTaskExecutor();
     private final CmdbImportService importService = new CmdbImportService();
+    private final CmdbTableMapper tableMapper = new CmdbTableMapper();
     private UiNotificationService notificationService;
+    private ImportPreviewViewFactory previewViewFactory;
     private CmdbWorkbook currentWorkbook;
 
     @FXML
@@ -68,11 +71,16 @@ public class MainController {
     private StackPane workspaceContent;
 
     @FXML
+    private VBox detailsContent;
+
+    @FXML
     private void initialize() {
         notificationService = new UiNotificationService(statusLabel, loadedFileLabel, issueCountLabel);
+        previewViewFactory = new ImportPreviewViewFactory(this::showConfigurationItemDetails, this::showRelationshipDetails);
         notificationService.showStatus("Ready");
         notificationService.showLoadedFile("No file loaded");
         notificationService.showIssueCount(0);
+        showDefaultDetails();
         setTaskRunning(false);
     }
 
@@ -149,20 +157,27 @@ public class MainController {
         notificationService.showStatus("Loading workbook...");
         setTaskRunning(true);
 
-        Task<ParseResult<CmdbWorkbook>> task = taskExecutor.submit(
+        Task<ParseResult<ImportPreviewViewModel>> task = taskExecutor.submit(
                 "Loading workbook",
-                () -> importService.importWorkbook(workbookPath)
+                () -> {
+                    ParseResult<CmdbWorkbook> parseResult = importService.importWorkbook(workbookPath);
+                    if (!parseResult.success()) {
+                        return ParseResult.failure(parseResult.errorMessage(), parseResult.warnings());
+                    }
+                    return ParseResult.success(tableMapper.toViewModel(parseResult.result()), parseResult.warnings());
+                }
         );
 
         task.setOnSucceeded(event -> {
-            ParseResult<CmdbWorkbook> result = task.getValue();
+            ParseResult<ImportPreviewViewModel> result = task.getValue();
             if (result.success()) {
-                currentWorkbook = result.result();
-                int warningCount = result.warnings().size();
+                ImportPreviewViewModel viewModel = result.result();
+                currentWorkbook = viewModel.workbook();
+                int warningCount = viewModel.warningCount();
                 notificationService.showLoadedFile(workbookPath.getFileName().toString());
                 notificationService.showIssueCount(warningCount);
                 notificationService.showStatus("Workbook loaded");
-                renderWorkbookSummary(workbookPath.getFileName().toString(), currentWorkbook, result.warnings());
+                renderImportPreview(viewModel);
             } else {
                 notificationService.showStatus("Workbook could not be loaded");
                 showImportError(result.errorMessage());
@@ -178,55 +193,11 @@ public class MainController {
         });
     }
 
-    private void renderWorkbookSummary(String fileName, CmdbWorkbook workbook, List<ParserWarning> warnings) {
-        int sheetCount = workbook.getSheets().size();
-        int ciCount = workbook.getSheets().stream()
-                .mapToInt(sheet -> sheet.getConfigurationItems().size())
-                .sum();
-        int relationshipCount = workbook.getSheets().stream()
-                .mapToInt(sheet -> sheet.getRelationships().size())
-                .sum();
-
+    private void renderImportPreview(ImportPreviewViewModel viewModel) {
         datasetChipLabel.setText("Dataset: loaded");
-
-        VBox summary = new VBox(12);
-        summary.setAlignment(Pos.CENTER_LEFT);
-        summary.setMaxWidth(640);
-        summary.getStyleClass().add("summary-card");
-
-        Label title = new Label("Workbook loaded");
-        title.getStyleClass().add("empty-title");
-
-        summary.getChildren().addAll(
-                title,
-                summaryLine("File", fileName),
-                summaryLine("Sheets", String.valueOf(sheetCount)),
-                summaryLine("Parsed CIs", String.valueOf(ciCount)),
-                summaryLine("Relationships", String.valueOf(relationshipCount)),
-                summaryLine("Parser warnings", String.valueOf(warnings.size()))
-        );
-
-        warnings.stream()
-                .limit(5)
-                .map(this::warningLine)
-                .forEach(summary.getChildren()::add);
-
-        workspaceContent.getChildren().setAll(summary);
-    }
-
-    private Label summaryLine(String label, String value) {
-        Label line = new Label(label + ": " + value);
-        line.getStyleClass().add("summary-line");
-        return line;
-    }
-
-    private Label warningLine(ParserWarning warning) {
-        String location = warning.getSheet() == null ? "" : warning.getSheet();
-        String row = warning.getRow() == null ? "" : " row " + warning.getRow();
-        Label line = new Label("Warning: " + location + row + " - " + warning.getMessage());
-        line.setWrapText(true);
-        line.getStyleClass().add("warning-line");
-        return line;
+        Node preview = previewViewFactory.create(viewModel);
+        workspaceContent.getChildren().setAll(preview);
+        showDefaultDetails();
     }
 
     private void showImportError(String message) {
@@ -235,6 +206,64 @@ public class MainController {
         alert.setHeaderText("The workbook could not be parsed.");
         alert.setContentText(message == null ? "Unknown import error." : message);
         alert.showAndWait();
+    }
+
+    private void showDefaultDetails() {
+        detailsContent.getChildren().setAll(
+                detailCard("Selected CI", "None selected"),
+                detailCard("Relationships", currentWorkbook == null ? "No relationship data loaded" : "Select a relationship row"),
+                detailCard("Metadata", currentWorkbook == null ? "Dataset metadata placeholder" : "Workbook is ready for preview")
+        );
+    }
+
+    private void showConfigurationItemDetails(ImportPreviewViewModel.ConfigurationItemPreviewRow row) {
+        VBox attributesCard = detailCard("Attributes", row.attributes().isEmpty() ? "No additional attributes" : "");
+        if (!row.attributes().isEmpty()) {
+            attributesCard.getChildren().remove(1);
+            row.attributes().entrySet().stream()
+                    .limit(8)
+                    .map(entry -> valueLabel(entry.getKey() + ": " + safe(entry.getValue())))
+                    .forEach(attributesCard.getChildren()::add);
+        }
+
+        detailsContent.getChildren().setAll(
+                detailCard("Selected CI", safe(row.name()), "Class: " + safe(row.ciClass())),
+                detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + row.sourceRow()),
+                detailCard("Identity", safe(row.identityKey())),
+                attributesCard
+        );
+    }
+
+    private void showRelationshipDetails(ImportPreviewViewModel.RelationshipPreviewRow row) {
+        detailsContent.getChildren().setAll(
+                detailCard("Relationship", "Source: " + safe(row.sourceCiDisplay()), "Target: " + safe(row.targetName())),
+                detailCard("Type", "Normalized: " + safe(row.relationshipType()), "Raw: " + safe(row.rawRelationshipType())),
+                detailCard("Status", safe(row.status())),
+                detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + row.sourceRow())
+        );
+    }
+
+    private VBox detailCard(String title, String... lines) {
+        VBox card = new VBox(5);
+        card.getStyleClass().add("detail-card");
+        Label titleLabel = new Label(title);
+        titleLabel.getStyleClass().add("field-label");
+        card.getChildren().add(titleLabel);
+        for (String line : lines) {
+            card.getChildren().add(valueLabel(line));
+        }
+        return card;
+    }
+
+    private Label valueLabel(String text) {
+        Label label = new Label(safe(text));
+        label.setWrapText(true);
+        label.getStyleClass().add("field-value");
+        return label;
+    }
+
+    private String safe(String value) {
+        return value == null || value.isBlank() ? "-" : value;
     }
 
     private void setTaskRunning(boolean running) {
