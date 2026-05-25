@@ -1,7 +1,6 @@
 package com.cmdbanalyzer.parser;
 
 import com.cmdbanalyzer.model.CmdbBlock;
-import com.cmdbanalyzer.model.ParserWarning;
 
 import java.util.List;
 
@@ -17,22 +16,9 @@ public interface BlockExtractor {
     /**
      * Extracts CI block boundaries from a worksheet.
      *
-     * @param sheet raw worksheet snapshot
+     * @param sheetDescriptor parser-neutral worksheet descriptor
      * @param headers detected header information
-     * @return block extraction result containing blocks and warnings
+     * @return extracted CI block row boundaries
      */
-    BlockExtractionResult extractBlocks(RawSheet sheet, HeaderDetectionResult headers);
-
-    /**
-     * Result of CI block extraction.
-     *
-     * @param blocks extracted CI blocks
-     * @param warnings diagnostics for malformed or ambiguous row groups
-     */
-    record BlockExtractionResult(List<CmdbBlock> blocks, List<ParserWarning> warnings) {
-        public BlockExtractionResult {
-            blocks = List.copyOf(blocks);
-            warnings = List.copyOf(warnings);
-        }
-    }
+    List<CmdbBlock> extractBlocks(SheetDescriptor sheetDescriptor, HeaderDetectionResult headers);
 }

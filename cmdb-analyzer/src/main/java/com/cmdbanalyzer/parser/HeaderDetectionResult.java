@@ -8,7 +8,7 @@ import java.util.Map;
 /**
  * Result of locating and normalizing a worksheet header row.
  *
- * @param headerRowIndex one-based header row index, when detected
+ * @param headerRowIndex one-based header row index, or null when no header was detected
  * @param headerMap normalized header names mapped to one-based column indexes
  * @param warnings diagnostics produced while detecting headers
  */
