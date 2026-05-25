@@ -1,0 +1,131 @@
+.app-root {
+    -fx-background-color: #f4f6f8;
+    -fx-font-family: "Inter", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+    -fx-font-size: 13px;
+    -fx-text-fill: #1f2933;
+}
+
+.menu-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #d9dee7 transparent;
+}
+
+.main-toolbar {
+    -fx-background-color: #eef2f6;
+    -fx-border-color: transparent transparent #d1d7e0 transparent;
+    -fx-padding: 8 12;
+    -fx-spacing: 8;
+}
+
+.button {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #b8c0cc;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+    -fx-padding: 6 14;
+    -fx-text-fill: #1f2933;
+}
+
+.button:hover {
+    -fx-background-color: #f7fafc;
+    -fx-border-color: #7b8794;
+}
+
+.split-pane {
+    -fx-background-color: #f4f6f8;
+    -fx-padding: 0;
+}
+
+.split-pane-divider {
+    -fx-background-color: #d9dee7;
+    -fx-padding: 0 1 0 1;
+}
+
+.side-panel,
+.detail-panel {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent #d9dee7 transparent transparent;
+    -fx-padding: 14;
+    -fx-spacing: 12;
+}
+
+.detail-panel {
+    -fx-border-color: transparent transparent transparent #d9dee7;
+}
+
+.panel-heading,
+.workspace-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #17212f;
+}
+
+.accordion,
+.titled-pane,
+.titled-pane > .content {
+    -fx-background-color: transparent;
+}
+
+.titled-pane > .title {
+    -fx-background-color: #f7f9fb;
+    -fx-border-color: #d9dee7;
+    -fx-border-radius: 4;
+    -fx-background-radius: 4;
+}
+
+.placeholder-list {
+    -fx-padding: 12;
+    -fx-background-color: #ffffff;
+}
+
+.workspace-panel {
+    -fx-background-color: #f4f6f8;
+}
+
+.workspace-header {
+    -fx-background-color: #ffffff;
+    -fx-border-color: transparent transparent #d9dee7 transparent;
+    -fx-padding: 14 18;
+}
+
+.workspace-subtitle,
+.empty-description,
+.field-value {
+    -fx-text-fill: #667085;
+}
+
+.workspace-empty {
+    -fx-background-color: #f4f6f8;
+    -fx-padding: 32;
+}
+
+.empty-state,
+.workspace-empty > .vbox {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d9dee7;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 24;
+}
+
+.empty-title {
+    -fx-font-size: 18px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #17212f;
+}
+
+.details-content {
+    -fx-padding: 4 0 0 0;
+}
+
+.field-label {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #3d4a5c;
+}
+
+.status-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d9dee7 transparent transparent transparent;
+    -fx-min-height: 32;
+}
