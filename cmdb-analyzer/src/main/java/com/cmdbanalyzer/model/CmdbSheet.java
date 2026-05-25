@@ -16,11 +16,13 @@ public class CmdbSheet {
     private Integer headerRowIndex;
     private Map<String, Integer> headerMap;
     private List<CmdbBlock> ciBlocks;
+    private List<ConfigurationItem> configurationItems;
+    private List<Relationship> relationships;
     private List<FlatRow> flatRows;
     private List<ParserWarning> warnings;
 
     public CmdbSheet() {
-        this(null, SheetType.UNKNOWN, null, new HashMap<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
+        this(null, SheetType.UNKNOWN, null, new HashMap<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new ArrayList<>());
     }
 
     public CmdbSheet(
@@ -32,11 +34,27 @@ public class CmdbSheet {
             List<FlatRow> flatRows,
             List<ParserWarning> warnings
     ) {
+        this(name, type, headerRowIndex, headerMap, ciBlocks, new ArrayList<>(), new ArrayList<>(), flatRows, warnings);
+    }
+
+    public CmdbSheet(
+            String name,
+            SheetType type,
+            Integer headerRowIndex,
+            Map<String, Integer> headerMap,
+            List<CmdbBlock> ciBlocks,
+            List<ConfigurationItem> configurationItems,
+            List<Relationship> relationships,
+            List<FlatRow> flatRows,
+            List<ParserWarning> warnings
+    ) {
         this.name = name;
         this.type = type == null ? SheetType.UNKNOWN : type;
         this.headerRowIndex = headerRowIndex;
         setHeaderMap(headerMap);
         setCiBlocks(ciBlocks);
+        setConfigurationItems(configurationItems);
+        setRelationships(relationships);
         setFlatRows(flatRows);
         setWarnings(warnings);
     }
@@ -81,6 +99,22 @@ public class CmdbSheet {
         this.ciBlocks = new ArrayList<>(safeList(ciBlocks));
     }
 
+    public List<ConfigurationItem> getConfigurationItems() {
+        return configurationItems;
+    }
+
+    public void setConfigurationItems(List<ConfigurationItem> configurationItems) {
+        this.configurationItems = new ArrayList<>(safeList(configurationItems));
+    }
+
+    public List<Relationship> getRelationships() {
+        return relationships;
+    }
+
+    public void setRelationships(List<Relationship> relationships) {
+        this.relationships = new ArrayList<>(safeList(relationships));
+    }
+
     public List<FlatRow> getFlatRows() {
         return flatRows;
     }
@@ -99,6 +133,14 @@ public class CmdbSheet {
 
     public void addCiBlock(CmdbBlock ciBlock) {
         ciBlocks.add(ciBlock);
+    }
+
+    public void addConfigurationItem(ConfigurationItem configurationItem) {
+        configurationItems.add(configurationItem);
+    }
+
+    public void addRelationship(Relationship relationship) {
+        relationships.add(relationship);
     }
 
     public void addFlatRow(FlatRow flatRow) {
@@ -130,12 +172,14 @@ public class CmdbSheet {
                 && Objects.equals(headerRowIndex, cmdbSheet.headerRowIndex)
                 && Objects.equals(headerMap, cmdbSheet.headerMap)
                 && Objects.equals(ciBlocks, cmdbSheet.ciBlocks)
+                && Objects.equals(configurationItems, cmdbSheet.configurationItems)
+                && Objects.equals(relationships, cmdbSheet.relationships)
                 && Objects.equals(flatRows, cmdbSheet.flatRows)
                 && Objects.equals(warnings, cmdbSheet.warnings);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, type, headerRowIndex, headerMap, ciBlocks, flatRows, warnings);
+        return Objects.hash(name, type, headerRowIndex, headerMap, ciBlocks, configurationItems, relationships, flatRows, warnings);
     }
 }
