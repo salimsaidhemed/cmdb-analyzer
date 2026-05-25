@@ -33,6 +33,24 @@ public record ImportPreviewViewModel(
         return warnings.size();
     }
 
+    public int resolvedRelationshipCount() {
+        return countRelationshipsByStatus("RESOLVED");
+    }
+
+    public int unresolvedRelationshipCount() {
+        return countRelationshipsByStatus("UNRESOLVED");
+    }
+
+    public int malformedRelationshipCount() {
+        return countRelationshipsByStatus("MALFORMED");
+    }
+
+    private int countRelationshipsByStatus(String status) {
+        return (int) relationships.stream()
+                .filter(relationship -> status.equals(relationship.status()))
+                .count();
+    }
+
     public record SheetPreviewRow(
             String name,
             String type,

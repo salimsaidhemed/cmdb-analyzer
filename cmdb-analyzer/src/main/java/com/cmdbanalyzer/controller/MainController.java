@@ -7,6 +7,7 @@ import com.cmdbanalyzer.model.CmdbWorkbook;
 import com.cmdbanalyzer.parser.ParseResult;
 import com.cmdbanalyzer.service.AppTaskExecutor;
 import com.cmdbanalyzer.service.CmdbImportService;
+import com.cmdbanalyzer.service.RelationshipResolutionService;
 import com.cmdbanalyzer.service.UiNotificationService;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
@@ -35,6 +36,7 @@ public class MainController {
 
     private final AppTaskExecutor taskExecutor = new AppTaskExecutor();
     private final CmdbImportService importService = new CmdbImportService();
+    private final RelationshipResolutionService relationshipResolutionService = new RelationshipResolutionService();
     private final CmdbTableMapper tableMapper = new CmdbTableMapper();
     private UiNotificationService notificationService;
     private ImportPreviewViewFactory previewViewFactory;
@@ -164,7 +166,8 @@ public class MainController {
                     if (!parseResult.success()) {
                         return ParseResult.failure(parseResult.errorMessage(), parseResult.warnings());
                     }
-                    return ParseResult.success(tableMapper.toViewModel(parseResult.result()), parseResult.warnings());
+                    relationshipResolutionService.resolve(parseResult.result());
+                    return ParseResult.success(tableMapper.toViewModel(parseResult.result()), parseResult.result().getParserWarnings());
                 }
         );
 

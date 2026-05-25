@@ -75,6 +75,8 @@ class CmdbTableMapperTest {
         assertEquals(1, viewModel.ciCount());
         assertEquals(1, viewModel.relationshipCount());
         assertEquals(1, viewModel.warningCount());
+        assertEquals(0, viewModel.resolvedRelationshipCount());
+        assertEquals(1, viewModel.unresolvedRelationshipCount());
         assertEquals("Applications", viewModel.sheets().get(0).name());
         assertEquals("Billing Service", viewModel.configurationItems().get(0).name());
         assertEquals("Billing Service", viewModel.relationships().get(0).sourceCiDisplay());

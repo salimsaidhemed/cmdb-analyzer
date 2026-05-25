@@ -67,6 +67,8 @@ public class ImportPreviewViewFactory {
                 metricCard("Sheets", viewModel.sheetCount()),
                 metricCard("CIs", viewModel.ciCount()),
                 metricCard("Relationships", viewModel.relationshipCount()),
+                metricCard("Resolved", viewModel.resolvedRelationshipCount()),
+                metricCard("Unresolved", viewModel.unresolvedRelationshipCount()),
                 metricCard("Warnings", viewModel.warningCount())
         );
 
