@@ -60,24 +60,32 @@
             <VBox minWidth="220" prefWidth="280" styleClass="side-panel">
                 <Label text="Navigation" styleClass="panel-heading"/>
                 <Accordion VBox.vgrow="ALWAYS">
-                    <TitledPane text="CI Classes" expanded="true">
-                        <VBox spacing="8" styleClass="placeholder-list">
-                            <Label text="Applications"/>
-                            <Label text="Infrastructure"/>
-                            <Label text="Services"/>
-                            <Label text="Databases"/>
-                        </VBox>
-                    </TitledPane>
-                    <TitledPane text="CI Tree">
-                        <StackPane styleClass="empty-state">
-                            <Label text="Tree navigation placeholder"/>
-                        </StackPane>
-                    </TitledPane>
-                    <TitledPane text="Filters">
-                        <StackPane styleClass="empty-state">
-                            <Label text="Filter controls placeholder"/>
-                        </StackPane>
-                    </TitledPane>
+                    <panes>
+                        <TitledPane text="CI Classes" expanded="true">
+                            <content>
+                                <VBox spacing="8" styleClass="placeholder-list">
+                                    <Label text="Applications"/>
+                                    <Label text="Infrastructure"/>
+                                    <Label text="Services"/>
+                                    <Label text="Databases"/>
+                                </VBox>
+                            </content>
+                        </TitledPane>
+                        <TitledPane text="CI Tree">
+                            <content>
+                                <StackPane styleClass="empty-state">
+                                    <Label text="Tree navigation placeholder"/>
+                                </StackPane>
+                            </content>
+                        </TitledPane>
+                        <TitledPane text="Filters">
+                            <content>
+                                <StackPane styleClass="empty-state">
+                                    <Label text="Filter controls placeholder"/>
+                                </StackPane>
+                            </content>
+                        </TitledPane>
+                    </panes>
                 </Accordion>
             </VBox>
 
