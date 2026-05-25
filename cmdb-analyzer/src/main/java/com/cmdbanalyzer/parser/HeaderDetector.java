@@ -12,8 +12,8 @@ public interface HeaderDetector {
     /**
      * Finds and normalizes the header row for a worksheet.
      *
-     * @param sheet raw worksheet snapshot
+     * @param sheetDescriptor parser-neutral worksheet descriptor
      * @return detected header row, normalized header map, and warnings
      */
-    HeaderDetectionResult detectHeaders(RawSheet sheet);
+    HeaderDetectionResult detectHeaders(SheetDescriptor sheetDescriptor);
 }

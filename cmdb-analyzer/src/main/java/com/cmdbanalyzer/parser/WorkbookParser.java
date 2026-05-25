@@ -5,19 +5,18 @@ import com.cmdbanalyzer.model.CmdbWorkbook;
 import java.nio.file.Path;
 
 /**
- * Entry point for converting an Excel workbook into a library-neutral CMDB workbook model.
+ * Entry point for parsing a CMDB workbook file into a domain workbook model.
  *
- * <p>Future implementations should coordinate workbook loading, sheet classification, header
- * detection, block extraction, CI creation, relationship creation, and relationship resolution.
- * Implementations must keep IO and Apache POI concerns outside the domain model.</p>
+ * <p>Implementations may use Apache POI internally in a later feature, but the contract exposes
+ * only Java standard library and CMDB domain types.</p>
  */
 public interface WorkbookParser {
 
     /**
-     * Parses the supplied workbook path into the CMDB workbook model.
+     * Parses the supplied workbook path.
      *
-     * @param sourceFile path to the source workbook
-     * @return parsed workbook container with warnings and traceability
+     * @param workbookPath path to the source workbook
+     * @return parse result containing a workbook, parser warnings, and error state
      */
-    CmdbWorkbook parse(Path sourceFile);
+    ParseResult<CmdbWorkbook> parse(Path workbookPath);
 }
