@@ -120,11 +120,11 @@
                                    styleClass="workspace-subtitle"/>
                         </VBox>
                         <Region HBox.hgrow="ALWAYS"/>
-                        <Label text="Dataset: none" styleClass="workspace-chip"/>
+                        <Label fx:id="datasetChipLabel" text="Dataset: none" styleClass="workspace-chip"/>
                     </HBox>
                 </top>
                 <center>
-                    <StackPane styleClass="workspace-empty">
+                    <StackPane fx:id="workspaceContent" styleClass="workspace-empty">
                         <VBox alignment="CENTER" spacing="12" maxWidth="520" styleClass="empty-state-card">
                             <FontIcon iconLiteral="fas-project-diagram" iconSize="42" styleClass="empty-state-icon"/>
                             <Label text="No CMDB file loaded" styleClass="empty-title"/>

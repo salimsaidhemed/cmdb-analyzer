@@ -181,6 +181,29 @@
     -fx-effect: dropshadow(gaussian, rgba(18, 31, 48, 0.06), 14, 0, 0, 2);
 }
 
+.summary-card {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d8dee8;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 28 34;
+    -fx-effect: dropshadow(gaussian, rgba(18, 31, 48, 0.06), 14, 0, 0, 2);
+}
+
+.summary-line {
+    -fx-text-fill: #273444;
+    -fx-font-size: 13px;
+}
+
+.warning-line {
+    -fx-background-color: #fff8e6;
+    -fx-border-color: #efd18a;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 8 10;
+    -fx-text-fill: #6c4f05;
+}
+
 .empty-title {
     -fx-font-size: 19px;
     -fx-font-weight: 700;
