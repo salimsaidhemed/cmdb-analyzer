@@ -3,11 +3,12 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Launch CMDB Analyzer",
+      "name": "Debug CMDB Analyzer",
       "request": "launch",
       "mainClass": "com.cmdbanalyzer.app.CmdbAnalyzerApp",
       "projectName": "cmdb-analyzer",
-      "vmArgs": "--enable-native-access=javafx.graphics"
+      "preLaunchTask": "Maven: compile",
+      "vmArgs": "--module-path ${env:HOME}/.m2/repository/org/openjfx/javafx-controls/21.0.5/javafx-controls-21.0.5-mac-aarch64.jar:${env:HOME}/.m2/repository/org/openjfx/javafx-fxml/21.0.5/javafx-fxml-21.0.5-mac-aarch64.jar:${env:HOME}/.m2/repository/org/openjfx/javafx-graphics/21.0.5/javafx-graphics-21.0.5-mac-aarch64.jar:${env:HOME}/.m2/repository/org/openjfx/javafx-base/21.0.5/javafx-base-21.0.5-mac-aarch64.jar --add-modules javafx.controls,javafx.fxml"
     }
   ]
 }
