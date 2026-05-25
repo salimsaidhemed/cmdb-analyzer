@@ -24,13 +24,16 @@ public class ImportPreviewViewFactory {
 
     private final Consumer<ImportPreviewViewModel.ConfigurationItemPreviewRow> ciSelectionHandler;
     private final Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler;
+    private final Consumer<ImportPreviewViewModel.ValidationIssuePreviewRow> issueSelectionHandler;
 
     public ImportPreviewViewFactory(
             Consumer<ImportPreviewViewModel.ConfigurationItemPreviewRow> ciSelectionHandler,
-            Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler
+            Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler,
+            Consumer<ImportPreviewViewModel.ValidationIssuePreviewRow> issueSelectionHandler
     ) {
         this.ciSelectionHandler = ciSelectionHandler;
         this.relationshipSelectionHandler = relationshipSelectionHandler;
+        this.issueSelectionHandler = issueSelectionHandler;
     }
 
     public Node create(ImportPreviewViewModel viewModel) {
@@ -69,6 +72,7 @@ public class ImportPreviewViewFactory {
                 metricCard("Relationships", viewModel.relationshipCount()),
                 metricCard("Resolved", viewModel.resolvedRelationshipCount()),
                 metricCard("Unresolved", viewModel.unresolvedRelationshipCount()),
+                metricCard("Issues", viewModel.issueCount()),
                 metricCard("Warnings", viewModel.warningCount())
         );
 
@@ -95,6 +99,7 @@ public class ImportPreviewViewFactory {
                 tab("Sheets", createSheetsTable(viewModel)),
                 tab("Configuration Items", createConfigurationItemsTable(viewModel)),
                 tab("Relationships", createRelationshipsTable(viewModel)),
+                tab("Issues", createIssuesTable(viewModel)),
                 tab("Warnings", createWarningsTable(viewModel))
         );
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -174,6 +179,25 @@ public class ImportPreviewViewFactory {
                 stringColumn("Raw Value", 180, ImportPreviewViewModel.WarningPreviewRow::rawValue)
         ));
         table.getItems().setAll(viewModel.warnings());
+        return table;
+    }
+
+    private TableView<ImportPreviewViewModel.ValidationIssuePreviewRow> createIssuesTable(ImportPreviewViewModel viewModel) {
+        TableView<ImportPreviewViewModel.ValidationIssuePreviewRow> table = table("No validation issues were reported.");
+        setColumns(table, List.of(
+                stringColumn("Severity", 110, ImportPreviewViewModel.ValidationIssuePreviewRow::severity),
+                stringColumn("Type", 190, ImportPreviewViewModel.ValidationIssuePreviewRow::type),
+                stringColumn("Message", 320, ImportPreviewViewModel.ValidationIssuePreviewRow::message),
+                stringColumn("Sheet", 150, ImportPreviewViewModel.ValidationIssuePreviewRow::sourceSheet),
+                stringColumn("Row", 80, ImportPreviewViewModel.ValidationIssuePreviewRow::sourceRow),
+                stringColumn("Recommended Action", 300, ImportPreviewViewModel.ValidationIssuePreviewRow::recommendedAction)
+        ));
+        table.getItems().setAll(viewModel.issues());
+        table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                issueSelectionHandler.accept(newValue);
+            }
+        });
         return table;
     }
 
