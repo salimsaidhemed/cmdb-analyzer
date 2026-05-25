@@ -1,5 +1,6 @@
 package com.cmdbanalyzer.app;
 
+import com.cmdbanalyzer.controller.MainController;
 import javafx.application.Application;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Parent;
@@ -19,6 +20,7 @@ public class CmdbAnalyzerApp extends Application {
         URL mainWindow = CmdbAnalyzerApp.class.getResource("/fxml/MainWindow.fxml");
         FXMLLoader loader = new FXMLLoader(mainWindow);
         Parent root = loader.load();
+        MainController controller = loader.getController();
 
         Scene scene = new Scene(root, 1200, 800);
         scene.getStylesheets().add(
@@ -29,6 +31,7 @@ public class CmdbAnalyzerApp extends Application {
         stage.setMinWidth(1000);
         stage.setMinHeight(700);
         stage.setScene(scene);
+        stage.setOnCloseRequest(event -> controller.shutdown());
         stage.show();
     }
 

@@ -7,6 +7,7 @@
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.control.ProgressIndicator?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
@@ -14,17 +15,17 @@
 <?import javafx.scene.control.ToolBar?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.Priority?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.StackPane?>
 <?import javafx.scene.layout.VBox?>
+<?import org.kordamp.ikonli.javafx.FontIcon?>
 
 <BorderPane xmlns="http://javafx.com/javafx/21"
             xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="com.cmdbanalyzer.controller.MainController"
             styleClass="app-root">
     <top>
-        <VBox>
+        <VBox styleClass="app-chrome">
             <MenuBar>
                 <Menu text="File">
                     <MenuItem text="Open..." onAction="#handleOpen"/>
@@ -46,42 +47,63 @@
                 </Menu>
             </MenuBar>
             <ToolBar styleClass="main-toolbar">
-                <Button text="Open" onAction="#handleOpen"/>
-                <Button text="Analyze" onAction="#handleAnalyze"/>
-                <Button text="Export" onAction="#handleExport"/>
+                <Button fx:id="openButton" text="Open" onAction="#handleOpen" styleClass="toolbar-button">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-folder-open" iconSize="15"/>
+                    </graphic>
+                </Button>
+                <Button fx:id="analyzeButton" text="Analyze" onAction="#handleAnalyze" styleClass="toolbar-button">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-chart-line" iconSize="15"/>
+                    </graphic>
+                </Button>
+                <Button fx:id="exportButton" text="Export" onAction="#handleExport" styleClass="toolbar-button">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-file-export" iconSize="15"/>
+                    </graphic>
+                </Button>
                 <Separator/>
-                <Button text="Refresh" onAction="#handleRefresh"/>
+                <Button fx:id="refreshButton" text="Refresh" onAction="#handleRefresh" styleClass="toolbar-button">
+                    <graphic>
+                        <FontIcon iconLiteral="fas-sync-alt" iconSize="15"/>
+                    </graphic>
+                </Button>
+                <Region HBox.hgrow="ALWAYS"/>
+                <Label text="CMDB Analyzer" styleClass="toolbar-title"/>
             </ToolBar>
         </VBox>
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.22, 0.78" BorderPane.alignment="CENTER">
-            <VBox minWidth="220" prefWidth="280" styleClass="side-panel">
-                <Label text="Navigation" styleClass="panel-heading"/>
-                <Accordion VBox.vgrow="ALWAYS">
+        <SplitPane dividerPositions="0.21, 0.78" BorderPane.alignment="CENTER" styleClass="content-split">
+            <VBox minWidth="230" prefWidth="285" styleClass="side-panel">
+                <VBox spacing="2" styleClass="section-header">
+                    <Label text="Navigation" styleClass="panel-heading"/>
+                    <Label text="Browse CMDB structure" styleClass="panel-caption"/>
+                </VBox>
+                <Accordion VBox.vgrow="ALWAYS" styleClass="navigation-accordion">
                     <panes>
                         <TitledPane text="CI Classes" expanded="true">
                             <content>
-                                <VBox spacing="8" styleClass="placeholder-list">
-                                    <Label text="Applications"/>
-                                    <Label text="Infrastructure"/>
-                                    <Label text="Services"/>
-                                    <Label text="Databases"/>
+                                <VBox spacing="6" styleClass="navigation-list">
+                                    <Label text="Applications" styleClass="navigation-item"/>
+                                    <Label text="Infrastructure" styleClass="navigation-item"/>
+                                    <Label text="Services" styleClass="navigation-item"/>
+                                    <Label text="Databases" styleClass="navigation-item"/>
                                 </VBox>
                             </content>
                         </TitledPane>
                         <TitledPane text="CI Tree">
                             <content>
-                                <StackPane styleClass="empty-state">
-                                    <Label text="Tree navigation placeholder"/>
+                                <StackPane styleClass="compact-empty-state">
+                                    <Label text="Tree navigation will appear here" styleClass="muted-text"/>
                                 </StackPane>
                             </content>
                         </TitledPane>
                         <TitledPane text="Filters">
                             <content>
-                                <StackPane styleClass="empty-state">
-                                    <Label text="Filter controls placeholder"/>
+                                <StackPane styleClass="compact-empty-state">
+                                    <Label text="Filter controls will appear here" styleClass="muted-text"/>
                                 </StackPane>
                             </content>
                         </TitledPane>
@@ -89,37 +111,46 @@
                 </Accordion>
             </VBox>
 
-            <BorderPane minWidth="480" styleClass="workspace-panel">
+            <BorderPane minWidth="520" styleClass="workspace-panel">
                 <top>
-                    <HBox alignment="CENTER_LEFT" spacing="12" styleClass="workspace-header">
-                        <Label text="Workspace" styleClass="workspace-title"/>
-                        <Label text="CI tables, validation results, dashboards, and graph views will appear here."
-                               styleClass="workspace-subtitle"/>
+                    <HBox alignment="CENTER_LEFT" spacing="14" styleClass="workspace-header">
+                        <VBox spacing="2">
+                            <Label text="Workspace" styleClass="workspace-title"/>
+                            <Label text="CI tables, validation results, dashboards, and graph views"
+                                   styleClass="workspace-subtitle"/>
+                        </VBox>
+                        <Region HBox.hgrow="ALWAYS"/>
+                        <Label text="Dataset: none" styleClass="workspace-chip"/>
                     </HBox>
                 </top>
                 <center>
                     <StackPane styleClass="workspace-empty">
-                        <VBox alignment="CENTER" spacing="10">
+                        <VBox alignment="CENTER" spacing="12" maxWidth="520" styleClass="empty-state-card">
+                            <FontIcon iconLiteral="fas-project-diagram" iconSize="42" styleClass="empty-state-icon"/>
                             <Label text="No CMDB file loaded" styleClass="empty-title"/>
-                            <Label text="Use Open or drag an Excel CMDB export into the workspace in a future build."
+                            <Label text="Use Open to import an Excel CMDB export. Drag and drop support will be added in a future build."
+                                   wrapText="true"
                                    styleClass="empty-description"/>
                         </VBox>
                     </StackPane>
                 </center>
             </BorderPane>
 
-            <VBox minWidth="240" prefWidth="300" styleClass="detail-panel">
-                <Label text="Details" styleClass="panel-heading"/>
-                <VBox spacing="14" VBox.vgrow="ALWAYS" styleClass="details-content">
-                    <VBox spacing="4">
+            <VBox minWidth="260" prefWidth="320" styleClass="detail-panel">
+                <VBox spacing="2" styleClass="section-header">
+                    <Label text="Details" styleClass="panel-heading"/>
+                    <Label text="Selection metadata" styleClass="panel-caption"/>
+                </VBox>
+                <VBox spacing="12" VBox.vgrow="ALWAYS" styleClass="details-content">
+                    <VBox spacing="5" styleClass="detail-card">
                         <Label text="Selected CI" styleClass="field-label"/>
                         <Label text="None selected" styleClass="field-value"/>
                     </VBox>
-                    <VBox spacing="4">
+                    <VBox spacing="5" styleClass="detail-card">
                         <Label text="Relationships" styleClass="field-label"/>
                         <Label text="No relationship data loaded" styleClass="field-value"/>
                     </VBox>
-                    <VBox spacing="4">
+                    <VBox spacing="5" styleClass="detail-card">
                         <Label text="Metadata" styleClass="field-label"/>
                         <Label text="Dataset metadata placeholder" styleClass="field-value"/>
                     </VBox>
@@ -129,14 +160,15 @@
     </center>
 
     <bottom>
-        <HBox alignment="CENTER_LEFT" spacing="16" styleClass="status-bar">
-            <Label fx:id="statusLabel" text="Ready"/>
+        <HBox alignment="CENTER_LEFT" spacing="12" styleClass="status-bar">
+            <ProgressIndicator fx:id="taskProgressIndicator" prefWidth="16" prefHeight="16" progress="-1"/>
+            <Label fx:id="statusLabel" text="Ready" styleClass="status-primary"/>
             <Separator orientation="VERTICAL"/>
-            <Label fx:id="loadedFileLabel" text="No file loaded"/>
+            <Label fx:id="loadedFileLabel" text="No file loaded" styleClass="status-secondary"/>
             <Region HBox.hgrow="ALWAYS"/>
-            <Label fx:id="issueCountLabel" text="Issues: 0"/>
+            <Label fx:id="issueCountLabel" text="Issues: 0" styleClass="status-secondary"/>
             <padding>
-                <Insets top="6" right="12" bottom="6" left="12"/>
+                <Insets top="7" right="14" bottom="7" left="14"/>
             </padding>
         </HBox>
     </bottom>
