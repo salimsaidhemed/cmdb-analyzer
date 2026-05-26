@@ -273,6 +273,64 @@
     -fx-fill-height: true;
 }
 
+.preview-filter-bar {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d8dee8;
+    -fx-border-radius: 8;
+    -fx-background-radius: 8;
+    -fx-padding: 14 16;
+    -fx-effect: dropshadow(gaussian, rgba(18, 31, 48, 0.04), 10, 0, 0, 1);
+}
+
+.preview-search-field {
+    -fx-background-color: #fbfcfe;
+    -fx-border-color: #c7cfda;
+    -fx-border-radius: 6;
+    -fx-background-radius: 6;
+    -fx-padding: 8 10;
+}
+
+.preview-search-field:focused {
+    -fx-border-color: #33658a;
+    -fx-background-color: #ffffff;
+}
+
+.filter-result-count {
+    -fx-text-fill: #40566f;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.filter-clear-button {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #c7cfda;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-padding: 7 11;
+    -fx-text-fill: #273444;
+    -fx-cursor: hand;
+}
+
+.filter-clear-button:hover {
+    -fx-background-color: #f2f6fb;
+}
+
+.preview-filter-controls {
+    -fx-pref-columns: 6;
+}
+
+.preview-filter-control {
+    -fx-min-width: 150;
+}
+
+.preview-filter-combo {
+    -fx-background-color: #fbfcfe;
+    -fx-border-color: #c7cfda;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+    -fx-pref-width: 170;
+}
+
 .metric-card {
     -fx-background-color: #f7f9fc;
     -fx-border-color: #d8dee8;
