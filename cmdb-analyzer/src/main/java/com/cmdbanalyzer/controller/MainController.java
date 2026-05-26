@@ -1,5 +1,7 @@
 package com.cmdbanalyzer.controller;
 
+import com.cmdbanalyzer.analyzer.validation.CmdbValidationEngine;
+import com.cmdbanalyzer.analyzer.validation.ValidationResult;
 import com.cmdbanalyzer.controller.preview.CmdbTableMapper;
 import com.cmdbanalyzer.controller.preview.ImportPreviewViewFactory;
 import com.cmdbanalyzer.controller.preview.ImportPreviewViewModel;
@@ -37,10 +39,12 @@ public class MainController {
     private final AppTaskExecutor taskExecutor = new AppTaskExecutor();
     private final CmdbImportService importService = new CmdbImportService();
     private final RelationshipResolutionService relationshipResolutionService = new RelationshipResolutionService();
+    private final CmdbValidationEngine validationEngine = new CmdbValidationEngine();
     private final CmdbTableMapper tableMapper = new CmdbTableMapper();
     private UiNotificationService notificationService;
     private ImportPreviewViewFactory previewViewFactory;
     private CmdbWorkbook currentWorkbook;
+    private ValidationResult latestValidationResult;
 
     @FXML
     private Button openButton;
@@ -78,7 +82,11 @@ public class MainController {
     @FXML
     private void initialize() {
         notificationService = new UiNotificationService(statusLabel, loadedFileLabel, issueCountLabel);
-        previewViewFactory = new ImportPreviewViewFactory(this::showConfigurationItemDetails, this::showRelationshipDetails);
+        previewViewFactory = new ImportPreviewViewFactory(
+                this::showConfigurationItemDetails,
+                this::showRelationshipDetails,
+                this::showValidationIssueDetails
+        );
         notificationService.showStatus("Ready");
         notificationService.showLoadedFile("No file loaded");
         notificationService.showIssueCount(0);
@@ -167,7 +175,11 @@ public class MainController {
                         return ParseResult.failure(parseResult.errorMessage(), parseResult.warnings());
                     }
                     relationshipResolutionService.resolve(parseResult.result());
-                    return ParseResult.success(tableMapper.toViewModel(parseResult.result()), parseResult.result().getParserWarnings());
+                    ValidationResult validationResult = validationEngine.validate(parseResult.result());
+                    return ParseResult.success(
+                            tableMapper.toViewModel(parseResult.result(), validationResult),
+                            parseResult.result().getParserWarnings()
+                    );
                 }
         );
 
@@ -176,10 +188,10 @@ public class MainController {
             if (result.success()) {
                 ImportPreviewViewModel viewModel = result.result();
                 currentWorkbook = viewModel.workbook();
-                int warningCount = viewModel.warningCount();
+                latestValidationResult = viewModel.validationResult();
                 notificationService.showLoadedFile(workbookPath.getFileName().toString());
-                notificationService.showIssueCount(warningCount);
-                notificationService.showStatus("Workbook loaded");
+                notificationService.showIssueCount(viewModel.issueCount());
+                notificationService.showStatus("Workbook loaded and validated");
                 renderImportPreview(viewModel);
             } else {
                 notificationService.showStatus("Workbook could not be loaded");
@@ -215,7 +227,10 @@ public class MainController {
         detailsContent.getChildren().setAll(
                 detailCard("Selected CI", "None selected"),
                 detailCard("Relationships", currentWorkbook == null ? "No relationship data loaded" : "Select a relationship row"),
-                detailCard("Metadata", currentWorkbook == null ? "Dataset metadata placeholder" : "Workbook is ready for preview")
+                detailCard("Metadata", currentWorkbook == null ? "Dataset metadata placeholder" : "Workbook is ready for preview"),
+                detailCard("Validation", latestValidationResult == null
+                        ? "No validation run yet"
+                        : latestValidationResult.totalIssueCount() + " issue(s) reported")
         );
     }
 
@@ -243,6 +258,18 @@ public class MainController {
                 detailCard("Type", "Normalized: " + safe(row.relationshipType()), "Raw: " + safe(row.rawRelationshipType())),
                 detailCard("Status", safe(row.status())),
                 detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + row.sourceRow())
+        );
+    }
+
+    private void showValidationIssueDetails(ImportPreviewViewModel.ValidationIssuePreviewRow row) {
+        detailsContent.getChildren().setAll(
+                detailCard("Validation Issue", safe(row.severity()), safe(row.type())),
+                detailCard("Message", safe(row.message())),
+                detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + safe(row.sourceRow())),
+                detailCard("Affected Object",
+                        "CI: " + safe(row.affectedCiId()),
+                        "Relationship: " + safe(row.affectedRelationshipId())),
+                detailCard("Recommended Action", safe(row.recommendedAction()))
         );
     }
 

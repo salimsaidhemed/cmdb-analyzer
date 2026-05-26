@@ -1,5 +1,7 @@
 package com.cmdbanalyzer.controller.preview;
 
+import com.cmdbanalyzer.analyzer.validation.ValidationIssue;
+import com.cmdbanalyzer.analyzer.validation.ValidationResult;
 import com.cmdbanalyzer.model.CmdbSheet;
 import com.cmdbanalyzer.model.CmdbWorkbook;
 import com.cmdbanalyzer.model.ConfigurationItem;
@@ -19,7 +21,14 @@ import java.util.Objects;
 public class CmdbTableMapper {
 
     public ImportPreviewViewModel toViewModel(CmdbWorkbook workbook) {
+        return toViewModel(workbook, new ValidationResult(List.of()));
+    }
+
+    public ImportPreviewViewModel toViewModel(CmdbWorkbook workbook, ValidationResult validationResult) {
         Objects.requireNonNull(workbook, "workbook must not be null");
+        ValidationResult safeValidationResult = validationResult == null
+                ? new ValidationResult(List.of())
+                : validationResult;
 
         Map<String, String> ciNamesById = new HashMap<>();
         List<ImportPreviewViewModel.SheetPreviewRow> sheetRows = new ArrayList<>();
@@ -43,14 +52,19 @@ public class CmdbTableMapper {
         List<ImportPreviewViewModel.WarningPreviewRow> warningRows = workbook.getParserWarnings().stream()
                 .map(this::toWarningRow)
                 .toList();
+        List<ImportPreviewViewModel.ValidationIssuePreviewRow> issueRows = safeValidationResult.issues().stream()
+                .map(this::toIssueRow)
+                .toList();
 
         return new ImportPreviewViewModel(
                 workbook,
+                safeValidationResult,
                 workbookName(workbook.getSourceFile()),
                 List.copyOf(sheetRows),
                 List.copyOf(ciRows),
                 List.copyOf(relationshipRows),
-                warningRows
+                warningRows,
+                issueRows
         );
     }
 
@@ -104,6 +118,21 @@ public class CmdbTableMapper {
                 warning.getRow() == null ? "" : String.valueOf(warning.getRow()),
                 display(warning.getColumn()),
                 display(warning.getRawValue())
+        );
+    }
+
+    private ImportPreviewViewModel.ValidationIssuePreviewRow toIssueRow(ValidationIssue issue) {
+        return new ImportPreviewViewModel.ValidationIssuePreviewRow(
+                display(issue.getId()),
+                issue.getSeverity() == null ? "" : issue.getSeverity().name(),
+                issue.getType() == null ? "" : issue.getType().name(),
+                display(issue.getMessage()),
+                display(issue.getSourceWorkbook()),
+                display(issue.getSourceSheet()),
+                issue.getSourceRow() == null ? "" : String.valueOf(issue.getSourceRow()),
+                display(issue.getAffectedCiId()),
+                display(issue.getAffectedRelationshipId()),
+                display(issue.getRecommendedAction())
         );
     }
 

@@ -1,5 +1,6 @@
 package com.cmdbanalyzer.controller.preview;
 
+import com.cmdbanalyzer.analyzer.validation.ValidationResult;
 import com.cmdbanalyzer.model.CmdbWorkbook;
 
 import java.util.List;
@@ -10,11 +11,13 @@ import java.util.Map;
  */
 public record ImportPreviewViewModel(
         CmdbWorkbook workbook,
+        ValidationResult validationResult,
         String workbookName,
         List<SheetPreviewRow> sheets,
         List<ConfigurationItemPreviewRow> configurationItems,
         List<RelationshipPreviewRow> relationships,
-        List<WarningPreviewRow> warnings
+        List<WarningPreviewRow> warnings,
+        List<ValidationIssuePreviewRow> issues
 ) {
 
     public int sheetCount() {
@@ -31,6 +34,10 @@ public record ImportPreviewViewModel(
 
     public int warningCount() {
         return warnings.size();
+    }
+
+    public int issueCount() {
+        return issues.size();
     }
 
     public int resolvedRelationshipCount() {
@@ -92,6 +99,20 @@ public record ImportPreviewViewModel(
             String row,
             String column,
             String rawValue
+    ) {
+    }
+
+    public record ValidationIssuePreviewRow(
+            String id,
+            String severity,
+            String type,
+            String message,
+            String sourceWorkbook,
+            String sourceSheet,
+            String sourceRow,
+            String affectedCiId,
+            String affectedRelationshipId,
+            String recommendedAction
     ) {
     }
 }
