@@ -19,18 +19,17 @@ class AppTest {
     }
 
     @Test
-    void titledPanesDeclareExplicitContent() throws Exception {
+    void mainWindowDeclaresNavigationTree() throws Exception {
         try (InputStream fxml = getClass().getResourceAsStream("/fxml/MainWindow.fxml")) {
             assertNotNull(fxml);
 
             Document document = DocumentBuilderFactory.newInstance()
                     .newDocumentBuilder()
                     .parse(fxml);
-            NodeList titledPanes = document.getElementsByTagName("TitledPane");
-            NodeList contentBlocks = document.getElementsByTagName("content");
+            NodeList treeViews = document.getElementsByTagName("TreeView");
 
-            assertEquals(3, titledPanes.getLength());
-            assertEquals(3, contentBlocks.getLength());
+            assertEquals(1, treeViews.getLength());
+            assertEquals("navigationTreeView", treeViews.item(0).getAttributes().getNamedItem("fx:id").getTextContent());
         }
     }
 }

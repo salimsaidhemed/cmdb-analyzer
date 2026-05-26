@@ -3,6 +3,7 @@ package com.cmdbanalyzer.controller.preview;
 import com.cmdbanalyzer.analyzer.validation.ValidationResult;
 import com.cmdbanalyzer.graph.GraphBuildResult;
 import com.cmdbanalyzer.model.CmdbWorkbook;
+import com.cmdbanalyzer.ui.navigation.CmdbNavigationNode;
 
 import java.util.List;
 import java.util.Map;
@@ -14,6 +15,7 @@ public record ImportPreviewViewModel(
         CmdbWorkbook workbook,
         ValidationResult validationResult,
         GraphBuildResult graphBuildResult,
+        CmdbNavigationNode navigationRoot,
         String workbookName,
         List<SheetPreviewRow> sheets,
         List<ConfigurationItemPreviewRow> configurationItems,

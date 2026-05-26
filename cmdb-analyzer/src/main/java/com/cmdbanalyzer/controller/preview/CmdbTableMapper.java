@@ -8,6 +8,7 @@ import com.cmdbanalyzer.model.CmdbWorkbook;
 import com.cmdbanalyzer.model.ConfigurationItem;
 import com.cmdbanalyzer.model.ParserWarning;
 import com.cmdbanalyzer.model.Relationship;
+import com.cmdbanalyzer.ui.navigation.CmdbNavigationTreeBuilder;
 
 import java.nio.file.Path;
 import java.util.ArrayList;
@@ -20,6 +21,8 @@ import java.util.Objects;
  * Converts parsed domain objects into immutable rows for the import preview tables.
  */
 public class CmdbTableMapper {
+
+    private final CmdbNavigationTreeBuilder navigationTreeBuilder = new CmdbNavigationTreeBuilder();
 
     public ImportPreviewViewModel toViewModel(CmdbWorkbook workbook) {
         return toViewModel(workbook, new ValidationResult(List.of()), null);
@@ -69,6 +72,7 @@ public class CmdbTableMapper {
                 workbook,
                 safeValidationResult,
                 graphBuildResult,
+                navigationTreeBuilder.build(workbook, safeValidationResult),
                 workbookName(workbook.getSourceFile()),
                 List.copyOf(sheetRows),
                 List.copyOf(ciRows),
