@@ -401,6 +401,110 @@
     -fx-background-color: #dcebf7;
 }
 
+.graph-view {
+    -fx-background-color: #ffffff;
+}
+
+.graph-header {
+    -fx-background-color: #f7f9fc;
+    -fx-border-color: transparent transparent #d8dee8 transparent;
+    -fx-padding: 12 14;
+}
+
+.graph-header-icon,
+.graph-empty-icon {
+    -fx-icon-color: #33658a;
+}
+
+.graph-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #162231;
+}
+
+.graph-count-label,
+.graph-selected-label,
+.graph-legend-label {
+    -fx-text-fill: #40566f;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.graph-notice-label {
+    -fx-background-color: #fff8e6;
+    -fx-border-color: #efd18a;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 4 9;
+    -fx-text-fill: #6c4f05;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.graph-canvas {
+    -fx-background-color: #fbfcfe;
+}
+
+.graph-empty-state {
+    -fx-padding: 34;
+}
+
+.graph-node {
+    -fx-background-radius: 9;
+    -fx-border-radius: 9;
+    -fx-border-width: 1.5;
+    -fx-padding: 8;
+    -fx-cursor: hand;
+    -fx-effect: dropshadow(gaussian, rgba(18, 31, 48, 0.08), 10, 0, 0, 2);
+}
+
+.graph-node-selected,
+.graph-legend-dot.graph-node-selected {
+    -fx-background-color: #e7f0f8;
+    -fx-border-color: #33658a;
+}
+
+.graph-node-dependency,
+.graph-legend-dot.graph-node-dependency {
+    -fx-background-color: #e9f5ef;
+    -fx-border-color: #77b58f;
+}
+
+.graph-node-dependent,
+.graph-legend-dot.graph-node-dependent {
+    -fx-background-color: #fff8e6;
+    -fx-border-color: #d7b45c;
+}
+
+.graph-node-title {
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+    -fx-text-fill: #162231;
+    -fx-text-alignment: center;
+}
+
+.graph-node-subtitle {
+    -fx-font-size: 11px;
+    -fx-text-fill: #657386;
+}
+
+.graph-edge {
+    -fx-stroke: #8aa0b5;
+    -fx-stroke-width: 1.6;
+}
+
+.graph-edge-arrow {
+    -fx-fill: #8aa0b5;
+}
+
+.graph-edge-label {
+    -fx-background-color: rgba(255, 255, 255, 0.86);
+    -fx-background-radius: 4;
+    -fx-padding: 2 5;
+    -fx-font-size: 10px;
+    -fx-text-fill: #40566f;
+}
+
 .empty-title {
     -fx-font-size: 19px;
     -fx-font-weight: 700;
