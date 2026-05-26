@@ -75,8 +75,8 @@
     </top>
 
     <center>
-        <SplitPane dividerPositions="0.21, 0.78" BorderPane.alignment="CENTER" styleClass="content-split">
-            <VBox minWidth="230" prefWidth="285" styleClass="side-panel">
+        <SplitPane dividerPositions="0.19, 0.77" BorderPane.alignment="CENTER" styleClass="content-split">
+            <VBox minWidth="240" prefWidth="300" styleClass="side-panel">
                 <VBox spacing="2" styleClass="section-header">
                     <Label text="Navigation" styleClass="panel-heading"/>
                     <Label text="Browse CMDB structure" styleClass="panel-caption"/>
@@ -109,7 +109,7 @@
                 </center>
             </BorderPane>
 
-            <VBox minWidth="260" prefWidth="320" styleClass="detail-panel">
+            <VBox minWidth="300" prefWidth="360" styleClass="detail-panel">
                 <VBox spacing="2" styleClass="section-header">
                     <Label text="Details" styleClass="panel-heading"/>
                     <Label text="Selection metadata" styleClass="panel-caption"/>
