@@ -32,6 +32,7 @@ public class CmdbAnalyzerApp extends Application {
         stage.setMinHeight(700);
         stage.setScene(scene);
         stage.setOnCloseRequest(event -> controller.shutdown());
+        stage.setMaximized(true);
         stage.show();
     }
 

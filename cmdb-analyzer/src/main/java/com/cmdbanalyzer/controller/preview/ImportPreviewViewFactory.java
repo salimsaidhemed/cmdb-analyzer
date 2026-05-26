@@ -22,6 +22,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.util.Duration;
+import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -91,30 +92,37 @@ public class ImportPreviewViewFactory {
         TilePane metrics = new TilePane(10, 10);
         metrics.getStyleClass().add("preview-metrics");
         metrics.getChildren().addAll(
-                metricCard("Sheets", viewModel.sheetCount()),
-                metricCard("CIs", viewModel.ciCount()),
-                metricCard("Relationships", viewModel.relationshipCount()),
-                metricCard("Resolved", viewModel.resolvedRelationshipCount()),
-                metricCard("Unresolved", viewModel.unresolvedRelationshipCount()),
-                metricCard("Issues", viewModel.issueCount()),
-                metricCard("Graph Vertices", viewModel.graphVertexCount()),
-                metricCard("Graph Edges", viewModel.graphEdgeCount()),
-                metricCard("Skipped", viewModel.skippedGraphRelationshipCount()),
-                metricCard("Warnings", viewModel.warningCount())
+                metricCard("Sheets", viewModel.sheetCount(), "fas-folder-open"),
+                metricCard("CIs", viewModel.ciCount(), "fas-cube"),
+                metricCard("Relationships", viewModel.relationshipCount(), "fas-link"),
+                metricCard("Resolved", viewModel.resolvedRelationshipCount(), "fas-check-circle"),
+                metricCard("Unresolved", viewModel.unresolvedRelationshipCount(), "fas-question-circle"),
+                metricCard("Issues", viewModel.issueCount(), "fas-exclamation-circle"),
+                metricCard("Graph Vertices", viewModel.graphVertexCount(), "fas-project-diagram"),
+                metricCard("Graph Edges", viewModel.graphEdgeCount(), "fas-route"),
+                metricCard("Skipped", viewModel.skippedGraphRelationshipCount(), "fas-ban"),
+                metricCard("Warnings", viewModel.warningCount(), "fas-exclamation-triangle")
         );
 
         header.getChildren().addAll(titleRow, metrics);
         return header;
     }
 
-    private Node metricCard(String label, int value) {
-        VBox card = new VBox(3);
+    private Node metricCard(String label, int value, String iconLiteral) {
+        VBox card = new VBox(8);
         card.getStyleClass().add("metric-card");
-        Label valueLabel = new Label(String.valueOf(value));
-        valueLabel.getStyleClass().add("metric-value");
+
+        HBox topRow = new HBox(8);
+        topRow.setAlignment(Pos.CENTER_LEFT);
+        FontIcon icon = new FontIcon(iconLiteral);
+        icon.getStyleClass().add("metric-icon");
         Label labelNode = new Label(label);
         labelNode.getStyleClass().add("metric-label");
-        card.getChildren().addAll(valueLabel, labelNode);
+        topRow.getChildren().addAll(icon, labelNode);
+
+        Label valueLabel = new Label(String.valueOf(value));
+        valueLabel.getStyleClass().add("metric-value");
+        card.getChildren().addAll(topRow, valueLabel);
         return card;
     }
 
