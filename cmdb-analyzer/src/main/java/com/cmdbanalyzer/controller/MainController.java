@@ -40,6 +40,7 @@ import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.List;
+import java.util.function.Consumer;
 
 /**
  * Handles UI events for the main application window.
@@ -59,6 +60,8 @@ public class MainController {
     private UiNotificationService notificationService;
     private ImportPreviewViewFactory previewViewFactory;
     private ImportPreviewViewModel currentViewModel;
+    private Consumer<String> graphSelectionHandler = ciId -> {
+    };
 
     @FXML
     private Button openButton;
@@ -103,7 +106,9 @@ public class MainController {
                 this::showSheetDetails,
                 this::showConfigurationItemDetails,
                 this::showRelationshipDetails,
-                this::showValidationIssueDetails
+                this::showValidationIssueDetails,
+                handler -> graphSelectionHandler = handler,
+                this::showRelationshipDetails
         );
         notificationService.showStatus("Ready");
         notificationService.showLoadedFile("No file loaded");
@@ -299,6 +304,7 @@ public class MainController {
     }
 
     private void showConfigurationItemDetails(ImportPreviewViewModel.ConfigurationItemPreviewRow row) {
+        graphSelectionHandler.accept(row.id());
         renderDetail(detailSelectionService.forConfigurationItem(currentViewModel, row.id()));
         notificationService.showStatus("Selected CI: " + safe(row.name()));
     }
@@ -308,6 +314,7 @@ public class MainController {
             showDefaultDetails();
             return;
         }
+        graphSelectionHandler.accept(item.getId());
         renderDetail(detailSelectionService.forConfigurationItem(currentViewModel, item));
         notificationService.showStatus("Selected CI: " + safe(item.getName()));
     }
@@ -360,8 +367,13 @@ public class MainController {
     }
 
     private void showRelationshipDetails(ImportPreviewViewModel.RelationshipPreviewRow row) {
-        renderDetail(detailSelectionService.forRelationship(currentViewModel, row.id()));
+        showRelationshipDetails(row.id());
         notificationService.showStatus("Selected relationship: " + safe(row.relationshipType()));
+    }
+
+    private void showRelationshipDetails(String relationshipId) {
+        renderDetail(detailSelectionService.forRelationship(currentViewModel, relationshipId));
+        notificationService.showStatus("Selected relationship");
     }
 
     private void showValidationIssueDetails(ImportPreviewViewModel.ValidationIssuePreviewRow row) {
