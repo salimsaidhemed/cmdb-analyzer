@@ -1,9 +1,14 @@
 package com.cmdbanalyzer.analyzer.validation;
 
 import com.cmdbanalyzer.analyzer.validation.rules.DuplicateCiIdentityRule;
+import com.cmdbanalyzer.analyzer.validation.rules.CircularDependencyRule;
+import com.cmdbanalyzer.analyzer.validation.rules.DuplicateRelationshipRule;
+import com.cmdbanalyzer.analyzer.validation.rules.IsolatedSubgraphRule;
 import com.cmdbanalyzer.analyzer.validation.rules.MalformedRelationshipRule;
+import com.cmdbanalyzer.analyzer.validation.rules.MissingGraphEdgeRule;
 import com.cmdbanalyzer.analyzer.validation.rules.MissingCiClassRule;
 import com.cmdbanalyzer.analyzer.validation.rules.MissingCiNameRule;
+import com.cmdbanalyzer.analyzer.validation.rules.OrphanCiRule;
 import com.cmdbanalyzer.analyzer.validation.rules.ParserWarningRule;
 import com.cmdbanalyzer.analyzer.validation.rules.SelfReferenceRelationshipRule;
 import com.cmdbanalyzer.analyzer.validation.rules.UnknownSheetTypeRule;
@@ -30,7 +35,12 @@ public class CmdbValidationEngine {
                 new MalformedRelationshipRule(),
                 new SelfReferenceRelationshipRule(),
                 new UnknownSheetTypeRule(),
-                new ParserWarningRule()
+                new ParserWarningRule(),
+                new OrphanCiRule(),
+                new CircularDependencyRule(),
+                new DuplicateRelationshipRule(),
+                new IsolatedSubgraphRule(),
+                new MissingGraphEdgeRule()
         ));
     }
 
@@ -40,8 +50,13 @@ public class CmdbValidationEngine {
 
     public ValidationResult validate(CmdbWorkbook workbook) {
         Objects.requireNonNull(workbook, "workbook must not be null");
+        return validate(ValidationContext.forWorkbook(workbook));
+    }
+
+    public ValidationResult validate(ValidationContext context) {
+        Objects.requireNonNull(context, "context must not be null");
         List<ValidationIssue> issues = new ArrayList<>();
-        rules.forEach(rule -> issues.addAll(rule.validate(workbook)));
+        rules.forEach(rule -> issues.addAll(rule.validate(context)));
         return new ValidationResult(issues);
     }
 }

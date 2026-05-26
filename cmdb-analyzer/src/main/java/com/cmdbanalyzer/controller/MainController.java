@@ -1,6 +1,7 @@
 package com.cmdbanalyzer.controller;
 
 import com.cmdbanalyzer.analyzer.validation.CmdbValidationEngine;
+import com.cmdbanalyzer.analyzer.validation.ValidationContext;
 import com.cmdbanalyzer.analyzer.validation.ValidationResult;
 import com.cmdbanalyzer.controller.preview.CmdbTableMapper;
 import com.cmdbanalyzer.controller.preview.ImportPreviewViewFactory;
@@ -179,8 +180,12 @@ public class MainController {
                         return ParseResult.failure(parseResult.errorMessage(), parseResult.warnings());
                     }
                     relationshipResolutionService.resolve(parseResult.result());
-                    ValidationResult validationResult = validationEngine.validate(parseResult.result());
                     GraphBuildResult graphBuildResult = graphBuilder.build(parseResult.result());
+                    ValidationResult validationResult = validationEngine.validate(new ValidationContext(
+                            parseResult.result(),
+                            graphBuildResult.graph(),
+                            graphBuildResult
+                    ));
                     return ParseResult.success(
                             tableMapper.toViewModel(parseResult.result(), validationResult, graphBuildResult),
                             parseResult.result().getParserWarnings()
