@@ -5,6 +5,8 @@ import com.cmdbanalyzer.analyzer.validation.ValidationResult;
 import com.cmdbanalyzer.controller.preview.CmdbTableMapper;
 import com.cmdbanalyzer.controller.preview.ImportPreviewViewFactory;
 import com.cmdbanalyzer.controller.preview.ImportPreviewViewModel;
+import com.cmdbanalyzer.graph.CmdbGraphBuilder;
+import com.cmdbanalyzer.graph.GraphBuildResult;
 import com.cmdbanalyzer.model.CmdbWorkbook;
 import com.cmdbanalyzer.parser.ParseResult;
 import com.cmdbanalyzer.service.AppTaskExecutor;
@@ -40,11 +42,13 @@ public class MainController {
     private final CmdbImportService importService = new CmdbImportService();
     private final RelationshipResolutionService relationshipResolutionService = new RelationshipResolutionService();
     private final CmdbValidationEngine validationEngine = new CmdbValidationEngine();
+    private final CmdbGraphBuilder graphBuilder = new CmdbGraphBuilder();
     private final CmdbTableMapper tableMapper = new CmdbTableMapper();
     private UiNotificationService notificationService;
     private ImportPreviewViewFactory previewViewFactory;
     private CmdbWorkbook currentWorkbook;
     private ValidationResult latestValidationResult;
+    private GraphBuildResult latestGraphBuildResult;
 
     @FXML
     private Button openButton;
@@ -176,8 +180,9 @@ public class MainController {
                     }
                     relationshipResolutionService.resolve(parseResult.result());
                     ValidationResult validationResult = validationEngine.validate(parseResult.result());
+                    GraphBuildResult graphBuildResult = graphBuilder.build(parseResult.result());
                     return ParseResult.success(
-                            tableMapper.toViewModel(parseResult.result(), validationResult),
+                            tableMapper.toViewModel(parseResult.result(), validationResult, graphBuildResult),
                             parseResult.result().getParserWarnings()
                     );
                 }
@@ -189,9 +194,10 @@ public class MainController {
                 ImportPreviewViewModel viewModel = result.result();
                 currentWorkbook = viewModel.workbook();
                 latestValidationResult = viewModel.validationResult();
+                latestGraphBuildResult = viewModel.graphBuildResult();
                 notificationService.showLoadedFile(workbookPath.getFileName().toString());
                 notificationService.showIssueCount(viewModel.issueCount());
-                notificationService.showStatus("Workbook loaded and validated");
+                notificationService.showStatus("Workbook loaded, validated, and graph built");
                 renderImportPreview(viewModel);
             } else {
                 notificationService.showStatus("Workbook could not be loaded");
@@ -230,7 +236,11 @@ public class MainController {
                 detailCard("Metadata", currentWorkbook == null ? "Dataset metadata placeholder" : "Workbook is ready for preview"),
                 detailCard("Validation", latestValidationResult == null
                         ? "No validation run yet"
-                        : latestValidationResult.totalIssueCount() + " issue(s) reported")
+                        : latestValidationResult.totalIssueCount() + " issue(s) reported"),
+                detailCard("Graph", latestGraphBuildResult == null
+                        ? "No graph built yet"
+                        : latestGraphBuildResult.vertexCount() + " vertices, "
+                        + latestGraphBuildResult.edgeCount() + " edges")
         );
     }
 

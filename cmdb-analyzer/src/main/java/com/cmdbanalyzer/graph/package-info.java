@@ -1,4 +1,4 @@
 /**
- * Dependency graph construction and analysis components will live in this package.
+ * Dependency graph construction and query components.
  */
 package com.cmdbanalyzer.graph;
