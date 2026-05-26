@@ -42,15 +42,18 @@ public class ImportPreviewViewFactory {
     private static final String ALL_ISSUE_TYPES = "All issue types";
 
     private final CmdbSearchService searchService = new CmdbSearchService();
+    private final Consumer<ImportPreviewViewModel.SheetPreviewRow> sheetSelectionHandler;
     private final Consumer<ImportPreviewViewModel.ConfigurationItemPreviewRow> ciSelectionHandler;
     private final Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler;
     private final Consumer<ImportPreviewViewModel.ValidationIssuePreviewRow> issueSelectionHandler;
 
     public ImportPreviewViewFactory(
+            Consumer<ImportPreviewViewModel.SheetPreviewRow> sheetSelectionHandler,
             Consumer<ImportPreviewViewModel.ConfigurationItemPreviewRow> ciSelectionHandler,
             Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler,
             Consumer<ImportPreviewViewModel.ValidationIssuePreviewRow> issueSelectionHandler
     ) {
+        this.sheetSelectionHandler = sheetSelectionHandler;
         this.ciSelectionHandler = ciSelectionHandler;
         this.relationshipSelectionHandler = relationshipSelectionHandler;
         this.issueSelectionHandler = issueSelectionHandler;
@@ -232,6 +235,11 @@ public class ImportPreviewViewFactory {
                 intColumn("Warnings", 110, ImportPreviewViewModel.SheetPreviewRow::warningCount)
         ));
         table.getItems().setAll(viewModel.sheets());
+        table.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null) {
+                sheetSelectionHandler.accept(newValue);
+            }
+        });
         return table;
     }
 

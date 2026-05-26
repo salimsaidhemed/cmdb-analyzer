@@ -7,6 +7,7 @@
 <?import javafx.scene.control.MenuBar?>
 <?import javafx.scene.control.MenuItem?>
 <?import javafx.scene.control.ProgressIndicator?>
+<?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.SeparatorMenuItem?>
 <?import javafx.scene.control.SplitPane?>
@@ -113,20 +114,11 @@
                     <Label text="Details" styleClass="panel-heading"/>
                     <Label text="Selection metadata" styleClass="panel-caption"/>
                 </VBox>
-                <VBox fx:id="detailsContent" spacing="12" VBox.vgrow="ALWAYS" styleClass="details-content">
-                    <VBox spacing="5" styleClass="detail-card">
-                        <Label text="Selected CI" styleClass="field-label"/>
-                        <Label text="None selected" styleClass="field-value"/>
-                    </VBox>
-                    <VBox spacing="5" styleClass="detail-card">
-                        <Label text="Relationships" styleClass="field-label"/>
-                        <Label text="No relationship data loaded" styleClass="field-value"/>
-                    </VBox>
-                    <VBox spacing="5" styleClass="detail-card">
-                        <Label text="Metadata" styleClass="field-label"/>
-                        <Label text="Dataset metadata placeholder" styleClass="field-value"/>
-                    </VBox>
-                </VBox>
+                <ScrollPane fitToWidth="true" hbarPolicy="NEVER" VBox.vgrow="ALWAYS" styleClass="details-scroll-pane">
+                    <content>
+                        <VBox fx:id="detailsContent" spacing="12" styleClass="details-content"/>
+                    </content>
+                </ScrollPane>
             </VBox>
         </SplitPane>
     </center>
