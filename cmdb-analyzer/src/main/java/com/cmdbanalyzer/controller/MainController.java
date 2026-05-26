@@ -15,6 +15,9 @@ import com.cmdbanalyzer.service.AppTaskExecutor;
 import com.cmdbanalyzer.service.CmdbImportService;
 import com.cmdbanalyzer.service.RelationshipResolutionService;
 import com.cmdbanalyzer.service.UiNotificationService;
+import com.cmdbanalyzer.ui.detail.DetailPanelView;
+import com.cmdbanalyzer.ui.detail.DetailSelectionService;
+import com.cmdbanalyzer.ui.detail.DetailViewModel;
 import com.cmdbanalyzer.ui.navigation.CmdbNavigationNode;
 import com.cmdbanalyzer.ui.navigation.CmdbNavigationTreeCell;
 import javafx.concurrent.Task;
@@ -51,11 +54,11 @@ public class MainController {
     private final CmdbValidationEngine validationEngine = new CmdbValidationEngine();
     private final CmdbGraphBuilder graphBuilder = new CmdbGraphBuilder();
     private final CmdbTableMapper tableMapper = new CmdbTableMapper();
+    private final DetailSelectionService detailSelectionService = new DetailSelectionService();
+    private final DetailPanelView detailPanelView = new DetailPanelView();
     private UiNotificationService notificationService;
     private ImportPreviewViewFactory previewViewFactory;
-    private CmdbWorkbook currentWorkbook;
-    private ValidationResult latestValidationResult;
-    private GraphBuildResult latestGraphBuildResult;
+    private ImportPreviewViewModel currentViewModel;
 
     @FXML
     private Button openButton;
@@ -97,6 +100,7 @@ public class MainController {
     private void initialize() {
         notificationService = new UiNotificationService(statusLabel, loadedFileLabel, issueCountLabel);
         previewViewFactory = new ImportPreviewViewFactory(
+                this::showSheetDetails,
                 this::showConfigurationItemDetails,
                 this::showRelationshipDetails,
                 this::showValidationIssueDetails
@@ -207,9 +211,7 @@ public class MainController {
             ParseResult<ImportPreviewViewModel> result = task.getValue();
             if (result.success()) {
                 ImportPreviewViewModel viewModel = result.result();
-                currentWorkbook = viewModel.workbook();
-                latestValidationResult = viewModel.validationResult();
-                latestGraphBuildResult = viewModel.graphBuildResult();
+                currentViewModel = viewModel;
                 notificationService.showLoadedFile(workbookPath.getFileName().toString());
                 notificationService.showIssueCount(viewModel.issueCount());
                 notificationService.showStatus("Workbook loaded, validated, and graph built");
@@ -277,7 +279,7 @@ public class MainController {
     private void handleNavigationSelection(CmdbNavigationNode node) {
         switch (node.type()) {
             case CI -> showConfigurationItemDetails(node.configurationItem());
-            case SHEET -> showSheetDetails(node);
+            case SHEET -> showSheetDetails(node.sourceSheet());
             case RELATIONSHIP_STATUS -> showRelationshipStatusDetails(node);
             case ISSUE_SEVERITY -> showIssueSeverityDetails(node);
             default -> notificationService.showStatus(node.displayLabel());
@@ -293,36 +295,12 @@ public class MainController {
     }
 
     private void showDefaultDetails() {
-        detailsContent.getChildren().setAll(
-                detailCard("Selected CI", "None selected"),
-                detailCard("Relationships", currentWorkbook == null ? "No relationship data loaded" : "Select a relationship row"),
-                detailCard("Metadata", currentWorkbook == null ? "Dataset metadata placeholder" : "Workbook is ready for preview"),
-                detailCard("Validation", latestValidationResult == null
-                        ? "No validation run yet"
-                        : latestValidationResult.totalIssueCount() + " issue(s) reported"),
-                detailCard("Graph", latestGraphBuildResult == null
-                        ? "No graph built yet"
-                        : latestGraphBuildResult.vertexCount() + " vertices, "
-                        + latestGraphBuildResult.edgeCount() + " edges")
-        );
+        renderDetail(detailSelectionService.empty());
     }
 
     private void showConfigurationItemDetails(ImportPreviewViewModel.ConfigurationItemPreviewRow row) {
-        VBox attributesCard = detailCard("Attributes", row.attributes().isEmpty() ? "No additional attributes" : "");
-        if (!row.attributes().isEmpty()) {
-            attributesCard.getChildren().remove(1);
-            row.attributes().entrySet().stream()
-                    .limit(8)
-                    .map(entry -> valueLabel(entry.getKey() + ": " + safe(entry.getValue())))
-                    .forEach(attributesCard.getChildren()::add);
-        }
-
-        detailsContent.getChildren().setAll(
-                detailCard("Selected CI", safe(row.name()), "Class: " + safe(row.ciClass())),
-                detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + row.sourceRow()),
-                detailCard("Identity", safe(row.identityKey())),
-                attributesCard
-        );
+        renderDetail(detailSelectionService.forConfigurationItem(currentViewModel, row.id()));
+        notificationService.showStatus("Selected CI: " + safe(row.name()));
     }
 
     private void showConfigurationItemDetails(ConfigurationItem item) {
@@ -330,88 +308,69 @@ public class MainController {
             showDefaultDetails();
             return;
         }
-        VBox attributesCard = detailCard("Attributes", item.getAttributes().isEmpty() ? "No additional attributes" : "");
-        if (!item.getAttributes().isEmpty()) {
-            attributesCard.getChildren().remove(1);
-            item.getAttributes().entrySet().stream()
-                    .limit(8)
-                    .map(entry -> valueLabel(entry.getKey() + ": " + safe(entry.getValue())))
-                    .forEach(attributesCard.getChildren()::add);
-        }
-        detailsContent.getChildren().setAll(
-                detailCard("Selected CI", safe(item.getName()), "Class: " + safe(item.getCiClass())),
-                detailCard("Source", "Sheet: " + safe(item.getSourceSheet()), "Row: " + item.getSourceRow()),
-                detailCard("Identity", safe(item.getIdentityKey())),
-                attributesCard
-        );
+        renderDetail(detailSelectionService.forConfigurationItem(currentViewModel, item));
         notificationService.showStatus("Selected CI: " + safe(item.getName()));
     }
 
-    private void showSheetDetails(CmdbNavigationNode node) {
-        detailsContent.getChildren().setAll(
-                detailCard("Sheet", safe(node.label()), "Type: " + safe(node.sheetType() == null ? null : node.sheetType().name())),
-                detailCard("Contents", node.count() + " CI(s) parsed from this sheet"),
-                detailCard("Navigation", "Select a CI below the sheet to inspect its details")
-        );
-        notificationService.showStatus("Selected sheet: " + safe(node.label()));
+    private void showSheetDetails(ImportPreviewViewModel.SheetPreviewRow row) {
+        showSheetDetails(row.name());
+    }
+
+    private void showSheetDetails(String sheetName) {
+        renderDetail(detailSelectionService.forSheet(currentViewModel, sheetName));
+        notificationService.showStatus("Selected sheet: " + safe(sheetName));
     }
 
     private void showRelationshipStatusDetails(CmdbNavigationNode node) {
-        detailsContent.getChildren().setAll(
-                detailCard("Relationship Status", safe(node.label())),
-                detailCard("Count", node.count() + " relationship(s)"),
-                detailCard("Navigation", "Open the Relationships tab to inspect matching rows")
-        );
+        renderDetail(new DetailViewModel(
+                safe(node.label()),
+                "Relationship Status",
+                node.count() + " relationships",
+                DetailViewModel.DetailTone.NEUTRAL,
+                List.of(),
+                List.of(new DetailViewModel.DetailSection(
+                        "Summary",
+                        List.of(
+                                new DetailViewModel.DetailField("Status", safe(node.label())),
+                                new DetailViewModel.DetailField("Relationship count", String.valueOf(node.count())),
+                                new DetailViewModel.DetailField("Next step", "Open the Relationships tab to inspect matching rows")
+                        )
+                ))
+        ));
         notificationService.showStatus("Relationship status: " + node.displayLabel());
     }
 
     private void showIssueSeverityDetails(CmdbNavigationNode node) {
-        detailsContent.getChildren().setAll(
-                detailCard("Issue Severity", safe(node.label())),
-                detailCard("Count", node.count() + " issue(s)"),
-                detailCard("Navigation", "Open the Issues tab to inspect matching rows")
-        );
+        renderDetail(new DetailViewModel(
+                safe(node.label()),
+                "Issue Severity",
+                node.count() + " issues",
+                DetailViewModel.DetailTone.NEUTRAL,
+                List.of(),
+                List.of(new DetailViewModel.DetailSection(
+                        "Summary",
+                        List.of(
+                                new DetailViewModel.DetailField("Severity", safe(node.label())),
+                                new DetailViewModel.DetailField("Issue count", String.valueOf(node.count())),
+                                new DetailViewModel.DetailField("Next step", "Open the Issues tab to inspect matching rows")
+                        )
+                ))
+        ));
         notificationService.showStatus("Issue severity: " + node.displayLabel());
     }
 
     private void showRelationshipDetails(ImportPreviewViewModel.RelationshipPreviewRow row) {
-        detailsContent.getChildren().setAll(
-                detailCard("Relationship", "Source: " + safe(row.sourceCiDisplay()), "Target: " + safe(row.targetName())),
-                detailCard("Type", "Normalized: " + safe(row.relationshipType()), "Raw: " + safe(row.rawRelationshipType())),
-                detailCard("Status", safe(row.status())),
-                detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + row.sourceRow())
-        );
+        renderDetail(detailSelectionService.forRelationship(currentViewModel, row.id()));
+        notificationService.showStatus("Selected relationship: " + safe(row.relationshipType()));
     }
 
     private void showValidationIssueDetails(ImportPreviewViewModel.ValidationIssuePreviewRow row) {
-        detailsContent.getChildren().setAll(
-                detailCard("Validation Issue", safe(row.severity()), safe(row.type())),
-                detailCard("Message", safe(row.message())),
-                detailCard("Source", "Sheet: " + safe(row.sourceSheet()), "Row: " + safe(row.sourceRow())),
-                detailCard("Affected Object",
-                        "CI: " + safe(row.affectedCiId()),
-                        "Relationship: " + safe(row.affectedRelationshipId())),
-                detailCard("Recommended Action", safe(row.recommendedAction()))
-        );
+        renderDetail(detailSelectionService.forValidationIssue(currentViewModel, row.id()));
+        notificationService.showStatus("Selected issue: " + safe(row.type()));
     }
 
-    private VBox detailCard(String title, String... lines) {
-        VBox card = new VBox(5);
-        card.getStyleClass().add("detail-card");
-        Label titleLabel = new Label(title);
-        titleLabel.getStyleClass().add("field-label");
-        card.getChildren().add(titleLabel);
-        for (String line : lines) {
-            card.getChildren().add(valueLabel(line));
-        }
-        return card;
-    }
-
-    private Label valueLabel(String text) {
-        Label label = new Label(safe(text));
-        label.setWrapText(true);
-        label.getStyleClass().add("field-value");
-        return label;
+    private void renderDetail(DetailViewModel viewModel) {
+        detailsContent.getChildren().setAll(detailPanelView.create(viewModel));
     }
 
     private String safe(String value) {
