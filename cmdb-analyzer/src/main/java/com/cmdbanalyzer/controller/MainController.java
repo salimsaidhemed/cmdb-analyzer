@@ -8,12 +8,15 @@ import com.cmdbanalyzer.controller.preview.ImportPreviewViewFactory;
 import com.cmdbanalyzer.controller.preview.ImportPreviewViewModel;
 import com.cmdbanalyzer.graph.CmdbGraphBuilder;
 import com.cmdbanalyzer.graph.GraphBuildResult;
+import com.cmdbanalyzer.model.ConfigurationItem;
 import com.cmdbanalyzer.model.CmdbWorkbook;
 import com.cmdbanalyzer.parser.ParseResult;
 import com.cmdbanalyzer.service.AppTaskExecutor;
 import com.cmdbanalyzer.service.CmdbImportService;
 import com.cmdbanalyzer.service.RelationshipResolutionService;
 import com.cmdbanalyzer.service.UiNotificationService;
+import com.cmdbanalyzer.ui.navigation.CmdbNavigationNode;
+import com.cmdbanalyzer.ui.navigation.CmdbNavigationTreeCell;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
 import javafx.scene.Node;
@@ -21,6 +24,8 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressIndicator;
+import javafx.scene.control.TreeItem;
+import javafx.scene.control.TreeView;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
@@ -31,6 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.nio.file.Path;
 import java.time.Duration;
+import java.util.List;
 
 /**
  * Handles UI events for the main application window.
@@ -82,6 +88,9 @@ public class MainController {
     private StackPane workspaceContent;
 
     @FXML
+    private TreeView<CmdbNavigationNode> navigationTreeView;
+
+    @FXML
     private VBox detailsContent;
 
     @FXML
@@ -95,6 +104,7 @@ public class MainController {
         notificationService.showStatus("Ready");
         notificationService.showLoadedFile("No file loaded");
         notificationService.showIssueCount(0);
+        initializeNavigationTree();
         showDefaultDetails();
         setTaskRunning(false);
     }
@@ -203,6 +213,7 @@ public class MainController {
                 notificationService.showLoadedFile(workbookPath.getFileName().toString());
                 notificationService.showIssueCount(viewModel.issueCount());
                 notificationService.showStatus("Workbook loaded, validated, and graph built");
+                populateNavigationTree(viewModel.navigationRoot());
                 renderImportPreview(viewModel);
             } else {
                 notificationService.showStatus("Workbook could not be loaded");
@@ -224,6 +235,53 @@ public class MainController {
         Node preview = previewViewFactory.create(viewModel);
         workspaceContent.getChildren().setAll(preview);
         showDefaultDetails();
+    }
+
+    private void initializeNavigationTree() {
+        navigationTreeView.setShowRoot(true);
+        navigationTreeView.setCellFactory(treeView -> new CmdbNavigationTreeCell());
+        navigationTreeView.setRoot(new TreeItem<>(new CmdbNavigationNode(
+                CmdbNavigationNode.NavigationNodeType.GROUP,
+                "No workbook loaded",
+                -1,
+                null,
+                null,
+                null,
+                null,
+                null,
+                null,
+                List.of()
+        )));
+        navigationTreeView.getSelectionModel().selectedItemProperty().addListener((observable, oldValue, newValue) -> {
+            if (newValue != null && newValue.getValue() != null) {
+                handleNavigationSelection(newValue.getValue());
+            }
+        });
+    }
+
+    private void populateNavigationTree(CmdbNavigationNode navigationRoot) {
+        TreeItem<CmdbNavigationNode> rootItem = toTreeItem(navigationRoot);
+        rootItem.setExpanded(true);
+        rootItem.getChildren().forEach(child -> child.setExpanded(true));
+        navigationTreeView.setRoot(rootItem);
+    }
+
+    private TreeItem<CmdbNavigationNode> toTreeItem(CmdbNavigationNode node) {
+        TreeItem<CmdbNavigationNode> treeItem = new TreeItem<>(node);
+        node.children().stream()
+                .map(this::toTreeItem)
+                .forEach(treeItem.getChildren()::add);
+        return treeItem;
+    }
+
+    private void handleNavigationSelection(CmdbNavigationNode node) {
+        switch (node.type()) {
+            case CI -> showConfigurationItemDetails(node.configurationItem());
+            case SHEET -> showSheetDetails(node);
+            case RELATIONSHIP_STATUS -> showRelationshipStatusDetails(node);
+            case ISSUE_SEVERITY -> showIssueSeverityDetails(node);
+            default -> notificationService.showStatus(node.displayLabel());
+        }
     }
 
     private void showImportError(String message) {
@@ -265,6 +323,55 @@ public class MainController {
                 detailCard("Identity", safe(row.identityKey())),
                 attributesCard
         );
+    }
+
+    private void showConfigurationItemDetails(ConfigurationItem item) {
+        if (item == null) {
+            showDefaultDetails();
+            return;
+        }
+        VBox attributesCard = detailCard("Attributes", item.getAttributes().isEmpty() ? "No additional attributes" : "");
+        if (!item.getAttributes().isEmpty()) {
+            attributesCard.getChildren().remove(1);
+            item.getAttributes().entrySet().stream()
+                    .limit(8)
+                    .map(entry -> valueLabel(entry.getKey() + ": " + safe(entry.getValue())))
+                    .forEach(attributesCard.getChildren()::add);
+        }
+        detailsContent.getChildren().setAll(
+                detailCard("Selected CI", safe(item.getName()), "Class: " + safe(item.getCiClass())),
+                detailCard("Source", "Sheet: " + safe(item.getSourceSheet()), "Row: " + item.getSourceRow()),
+                detailCard("Identity", safe(item.getIdentityKey())),
+                attributesCard
+        );
+        notificationService.showStatus("Selected CI: " + safe(item.getName()));
+    }
+
+    private void showSheetDetails(CmdbNavigationNode node) {
+        detailsContent.getChildren().setAll(
+                detailCard("Sheet", safe(node.label()), "Type: " + safe(node.sheetType() == null ? null : node.sheetType().name())),
+                detailCard("Contents", node.count() + " CI(s) parsed from this sheet"),
+                detailCard("Navigation", "Select a CI below the sheet to inspect its details")
+        );
+        notificationService.showStatus("Selected sheet: " + safe(node.label()));
+    }
+
+    private void showRelationshipStatusDetails(CmdbNavigationNode node) {
+        detailsContent.getChildren().setAll(
+                detailCard("Relationship Status", safe(node.label())),
+                detailCard("Count", node.count() + " relationship(s)"),
+                detailCard("Navigation", "Open the Relationships tab to inspect matching rows")
+        );
+        notificationService.showStatus("Relationship status: " + node.displayLabel());
+    }
+
+    private void showIssueSeverityDetails(CmdbNavigationNode node) {
+        detailsContent.getChildren().setAll(
+                detailCard("Issue Severity", safe(node.label())),
+                detailCard("Count", node.count() + " issue(s)"),
+                detailCard("Navigation", "Open the Issues tab to inspect matching rows")
+        );
+        notificationService.showStatus("Issue severity: " + node.displayLabel());
     }
 
     private void showRelationshipDetails(ImportPreviewViewModel.RelationshipPreviewRow row) {
