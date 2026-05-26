@@ -1,5 +1,8 @@
 package com.cmdbanalyzer.controller;
 
+import com.cmdbanalyzer.analyzer.impact.ImpactAnalysisResult;
+import com.cmdbanalyzer.analyzer.impact.ImpactAnalysisService;
+import com.cmdbanalyzer.analyzer.impact.ImpactDirection;
 import com.cmdbanalyzer.analyzer.validation.CmdbValidationEngine;
 import com.cmdbanalyzer.analyzer.validation.ValidationContext;
 import com.cmdbanalyzer.analyzer.validation.ValidationResult;
@@ -62,6 +65,8 @@ public class MainController {
     private ImportPreviewViewModel currentViewModel;
     private Consumer<String> graphSelectionHandler = ciId -> {
     };
+    private ImportPreviewViewFactory.ImpactSelectionHandler impactSelectionHandler = (ciId, ciName) -> {
+    };
 
     @FXML
     private Button openButton;
@@ -108,7 +113,9 @@ public class MainController {
                 this::showRelationshipDetails,
                 this::showValidationIssueDetails,
                 handler -> graphSelectionHandler = handler,
-                this::showRelationshipDetails
+                handler -> impactSelectionHandler = handler,
+                this::showRelationshipDetails,
+                this::runImpactAnalysis
         );
         notificationService.showStatus("Ready");
         notificationService.showLoadedFile("No file loaded");
@@ -305,6 +312,7 @@ public class MainController {
 
     private void showConfigurationItemDetails(ImportPreviewViewModel.ConfigurationItemPreviewRow row) {
         graphSelectionHandler.accept(row.id());
+        impactSelectionHandler.showSelection(row.id(), row.name());
         renderDetail(detailSelectionService.forConfigurationItem(currentViewModel, row.id()));
         notificationService.showStatus("Selected CI: " + safe(row.name()));
     }
@@ -315,6 +323,7 @@ public class MainController {
             return;
         }
         graphSelectionHandler.accept(item.getId());
+        impactSelectionHandler.showSelection(item.getId(), item.getName());
         renderDetail(detailSelectionService.forConfigurationItem(currentViewModel, item));
         notificationService.showStatus("Selected CI: " + safe(item.getName()));
     }
@@ -383,6 +392,40 @@ public class MainController {
 
     private void renderDetail(DetailViewModel viewModel) {
         detailsContent.getChildren().setAll(detailPanelView.create(viewModel));
+    }
+
+    private void runImpactAnalysis(
+            String ciId,
+            ImpactDirection direction,
+            int maxDepth,
+            Consumer<ImpactAnalysisResult> onSucceeded,
+            Consumer<Throwable> onFailed,
+            Runnable onFinished
+    ) {
+        if (currentViewModel == null
+                || currentViewModel.graphBuildResult() == null
+                || currentViewModel.graphBuildResult().graph() == null) {
+            onFailed.accept(new IllegalStateException("No resolved graph is available."));
+            onFinished.run();
+            return;
+        }
+
+        notificationService.showStatus("Running impact analysis...");
+        Task<ImpactAnalysisResult> task = taskExecutor.submit(
+                "Impact analysis",
+                () -> new ImpactAnalysisService(currentViewModel.graphBuildResult().graph())
+                        .analyzeImpact(ciId, direction, maxDepth)
+        );
+        task.setOnSucceeded(event -> {
+            onSucceeded.accept(task.getValue());
+            notificationService.showStatus("Impact analysis complete");
+            onFinished.run();
+        });
+        task.setOnFailed(event -> {
+            onFailed.accept(task.getException());
+            notificationService.showStatus("Impact analysis failed");
+            onFinished.run();
+        });
     }
 
     private String safe(String value) {
