@@ -9,5 +9,9 @@ import java.util.List;
  */
 public interface ValidationRule {
 
-    List<ValidationIssue> validate(CmdbWorkbook workbook);
+    default List<ValidationIssue> validate(CmdbWorkbook workbook) {
+        return validate(ValidationContext.forWorkbook(workbook));
+    }
+
+    List<ValidationIssue> validate(ValidationContext context);
 }

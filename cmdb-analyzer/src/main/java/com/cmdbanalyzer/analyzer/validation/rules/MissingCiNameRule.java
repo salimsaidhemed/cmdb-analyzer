@@ -4,7 +4,7 @@ import com.cmdbanalyzer.analyzer.validation.ValidationIssue;
 import com.cmdbanalyzer.analyzer.validation.ValidationIssueType;
 import com.cmdbanalyzer.analyzer.validation.ValidationRule;
 import com.cmdbanalyzer.analyzer.validation.ValidationSeverity;
-import com.cmdbanalyzer.model.CmdbWorkbook;
+import com.cmdbanalyzer.analyzer.validation.ValidationContext;
 
 import java.util.List;
 
@@ -14,7 +14,8 @@ import java.util.List;
 public class MissingCiNameRule implements ValidationRule {
 
     @Override
-    public List<ValidationIssue> validate(CmdbWorkbook workbook) {
+    public List<ValidationIssue> validate(ValidationContext context) {
+        var workbook = context.workbook();
         return workbook.getSheets().stream()
                 .flatMap(sheet -> sheet.getConfigurationItems().stream())
                 .filter(item -> isBlank(item.getName()))
