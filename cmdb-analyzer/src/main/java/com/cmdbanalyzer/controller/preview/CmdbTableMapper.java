@@ -2,6 +2,7 @@ package com.cmdbanalyzer.controller.preview;
 
 import com.cmdbanalyzer.analyzer.validation.ValidationIssue;
 import com.cmdbanalyzer.analyzer.validation.ValidationResult;
+import com.cmdbanalyzer.graph.GraphBuildResult;
 import com.cmdbanalyzer.model.CmdbSheet;
 import com.cmdbanalyzer.model.CmdbWorkbook;
 import com.cmdbanalyzer.model.ConfigurationItem;
@@ -21,10 +22,18 @@ import java.util.Objects;
 public class CmdbTableMapper {
 
     public ImportPreviewViewModel toViewModel(CmdbWorkbook workbook) {
-        return toViewModel(workbook, new ValidationResult(List.of()));
+        return toViewModel(workbook, new ValidationResult(List.of()), null);
     }
 
     public ImportPreviewViewModel toViewModel(CmdbWorkbook workbook, ValidationResult validationResult) {
+        return toViewModel(workbook, validationResult, null);
+    }
+
+    public ImportPreviewViewModel toViewModel(
+            CmdbWorkbook workbook,
+            ValidationResult validationResult,
+            GraphBuildResult graphBuildResult
+    ) {
         Objects.requireNonNull(workbook, "workbook must not be null");
         ValidationResult safeValidationResult = validationResult == null
                 ? new ValidationResult(List.of())
@@ -59,6 +68,7 @@ public class CmdbTableMapper {
         return new ImportPreviewViewModel(
                 workbook,
                 safeValidationResult,
+                graphBuildResult,
                 workbookName(workbook.getSourceFile()),
                 List.copyOf(sheetRows),
                 List.copyOf(ciRows),

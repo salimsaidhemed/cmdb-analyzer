@@ -12,6 +12,7 @@ import javafx.scene.control.TableView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 
 import java.util.List;
@@ -64,7 +65,7 @@ public class ImportPreviewViewFactory {
         state.getStyleClass().add("preview-state-chip");
         titleRow.getChildren().addAll(titleText, spacer, state);
 
-        HBox metrics = new HBox(10);
+        TilePane metrics = new TilePane(10, 10);
         metrics.getStyleClass().add("preview-metrics");
         metrics.getChildren().addAll(
                 metricCard("Sheets", viewModel.sheetCount()),
@@ -73,6 +74,9 @@ public class ImportPreviewViewFactory {
                 metricCard("Resolved", viewModel.resolvedRelationshipCount()),
                 metricCard("Unresolved", viewModel.unresolvedRelationshipCount()),
                 metricCard("Issues", viewModel.issueCount()),
+                metricCard("Graph Vertices", viewModel.graphVertexCount()),
+                metricCard("Graph Edges", viewModel.graphEdgeCount()),
+                metricCard("Skipped", viewModel.skippedGraphRelationshipCount()),
                 metricCard("Warnings", viewModel.warningCount())
         );
 
@@ -88,7 +92,6 @@ public class ImportPreviewViewFactory {
         Label labelNode = new Label(label);
         labelNode.getStyleClass().add("metric-label");
         card.getChildren().addAll(valueLabel, labelNode);
-        HBox.setHgrow(card, Priority.ALWAYS);
         return card;
     }
 

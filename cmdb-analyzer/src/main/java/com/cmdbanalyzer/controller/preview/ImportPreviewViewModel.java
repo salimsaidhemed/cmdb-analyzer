@@ -1,6 +1,7 @@
 package com.cmdbanalyzer.controller.preview;
 
 import com.cmdbanalyzer.analyzer.validation.ValidationResult;
+import com.cmdbanalyzer.graph.GraphBuildResult;
 import com.cmdbanalyzer.model.CmdbWorkbook;
 
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Map;
 public record ImportPreviewViewModel(
         CmdbWorkbook workbook,
         ValidationResult validationResult,
+        GraphBuildResult graphBuildResult,
         String workbookName,
         List<SheetPreviewRow> sheets,
         List<ConfigurationItemPreviewRow> configurationItems,
@@ -38,6 +40,18 @@ public record ImportPreviewViewModel(
 
     public int issueCount() {
         return issues.size();
+    }
+
+    public int graphVertexCount() {
+        return graphBuildResult == null ? 0 : graphBuildResult.vertexCount();
+    }
+
+    public int graphEdgeCount() {
+        return graphBuildResult == null ? 0 : graphBuildResult.edgeCount();
+    }
+
+    public int skippedGraphRelationshipCount() {
+        return graphBuildResult == null ? 0 : graphBuildResult.skippedRelationshipCount();
     }
 
     public int resolvedRelationshipCount() {
