@@ -83,7 +83,14 @@ public class GraphNeighborhoodService {
     }
 
     private GraphNode node(ConfigurationItem item, NodeRole role) {
-        return new GraphNode(item.getId(), item.getName(), item.getCiClass(), role);
+        return new GraphNode(
+                item.getId(),
+                item.getName(),
+                item.getCiClass(),
+                item.getSourceSheet(),
+                item.getSourceRow(),
+                role
+        );
     }
 
     private GraphEdge edge(CmdbGraphEdge edge) {

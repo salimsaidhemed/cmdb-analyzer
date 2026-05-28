@@ -435,10 +435,23 @@
 
 .graph-count-label,
 .graph-selected-label,
-.graph-legend-label {
+.graph-legend-label,
+.graph-direction-note {
     -fx-text-fill: #40566f;
     -fx-font-size: 12px;
     -fx-font-weight: 700;
+}
+
+.graph-direction-note {
+    -fx-background-color: #eef3f8;
+    -fx-background-radius: 12;
+    -fx-border-color: #d8e2ec;
+    -fx-border-radius: 12;
+    -fx-padding: 4 9;
+}
+
+.graph-side-icon {
+    -fx-icon-color: #64748b;
 }
 
 .graph-notice-label {
@@ -481,12 +494,32 @@
     -fx-max-width: 82;
 }
 
+.graph-scroll-pane {
+    -fx-background-color: #f8fafc;
+    -fx-border-color: transparent;
+}
+
+.graph-scroll-pane > .viewport {
+    -fx-background-color: #f8fafc;
+}
+
 .graph-canvas {
     -fx-background-color: #fbfcfe;
 }
 
 .graph-empty-state {
     -fx-padding: 34;
+}
+
+.graph-side-title {
+    -fx-background-color: #ffffff;
+    -fx-border-color: #d8e2ec;
+    -fx-background-radius: 14;
+    -fx-border-radius: 14;
+    -fx-padding: 5 11;
+    -fx-font-size: 12px;
+    -fx-font-weight: 800;
+    -fx-text-fill: #40566f;
 }
 
 .graph-node {
@@ -496,6 +529,15 @@
     -fx-padding: 8;
     -fx-cursor: hand;
     -fx-effect: dropshadow(gaussian, rgba(18, 31, 48, 0.08), 10, 0, 0, 2);
+}
+
+.graph-node:hover {
+    -fx-effect: dropshadow(gaussian, rgba(18, 31, 48, 0.18), 14, 0, 0, 3);
+}
+
+.graph-node-active {
+    -fx-border-width: 2.4;
+    -fx-effect: dropshadow(gaussian, rgba(51, 101, 138, 0.26), 16, 0, 0, 4);
 }
 
 .graph-node-selected,
@@ -533,8 +575,37 @@
     -fx-stroke-width: 1.6;
 }
 
+.graph-edge-hit-area {
+    -fx-stroke: rgba(0, 0, 0, 0.01);
+    -fx-stroke-width: 16;
+    -fx-cursor: hand;
+}
+
 .graph-edge-arrow {
     -fx-fill: #8aa0b5;
+}
+
+.graph-edge-group {
+    -fx-cursor: hand;
+}
+
+.graph-edge-group.graph-edge-hover .graph-edge,
+.graph-edge-group.graph-edge-connected .graph-edge,
+.graph-edge-group.graph-edge-selected .graph-edge {
+    -fx-stroke: #33658a;
+    -fx-stroke-width: 2.4;
+}
+
+.graph-edge-group.graph-edge-hover .graph-edge-arrow,
+.graph-edge-group.graph-edge-connected .graph-edge-arrow,
+.graph-edge-group.graph-edge-selected .graph-edge-arrow {
+    -fx-fill: #33658a;
+}
+
+.graph-edge-group.graph-edge-selected .graph-edge-label {
+    -fx-background-color: #e7f0f8;
+    -fx-border-color: #33658a;
+    -fx-border-radius: 4;
 }
 
 .graph-edge-label {

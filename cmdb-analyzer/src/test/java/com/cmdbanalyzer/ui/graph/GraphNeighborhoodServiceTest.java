@@ -46,6 +46,23 @@ class GraphNeighborhoodServiceTest {
     }
 
     @Test
+    void graphNodeKeepsFullLabelAndSourceTraceabilityForTooltips() {
+        String longName = "Application Service With A Very Long Enterprise CI Name";
+        GraphBuildResult result = graphBuilder.build(workbook(
+                List.of(item("app-1", longName)),
+                List.of()
+        ));
+
+        GraphNeighborhoodViewModel model = service.build(result.graph(), "app-1");
+        GraphNeighborhoodViewModel.GraphNode node = model.nodes().get(0);
+
+        assertEquals(longName, node.name());
+        assertEquals("Application", node.ciClass());
+        assertEquals("Applications", node.sourceSheet());
+        assertEquals(2, node.sourceRow());
+    }
+
+    @Test
     void unresolvedRelationshipsAreNotIncluded() {
         GraphBuildResult result = graphBuilder.build(workbook(
                 List.of(item("app-1", "APP01"), item("db-1", "DB01")),
