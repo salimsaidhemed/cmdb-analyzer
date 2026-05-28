@@ -411,8 +411,19 @@
     -fx-padding: 12 14;
 }
 
+.impact-view {
+    -fx-background-color: #ffffff;
+}
+
+.impact-header {
+    -fx-background-color: #f7f9fc;
+    -fx-border-color: transparent transparent #d8dee8 transparent;
+    -fx-padding: 12 14;
+}
+
 .graph-header-icon,
-.graph-empty-icon {
+.graph-empty-icon,
+.impact-header-icon {
     -fx-icon-color: #33658a;
 }
 
@@ -439,6 +450,35 @@
     -fx-text-fill: #6c4f05;
     -fx-font-size: 12px;
     -fx-font-weight: 700;
+}
+
+.impact-notice-label {
+    -fx-background-color: #eef3f8;
+    -fx-border-color: #d8e2ec;
+    -fx-background-radius: 12;
+    -fx-border-radius: 12;
+    -fx-padding: 5 10;
+    -fx-text-fill: #40566f;
+    -fx-font-size: 12px;
+    -fx-font-weight: 700;
+}
+
+.impact-notice-warning {
+    -fx-background-color: #fff8e6;
+    -fx-border-color: #efd18a;
+    -fx-text-fill: #6c4f05;
+}
+
+.impact-control,
+.impact-depth-spinner {
+    -fx-background-color: #fbfcfe;
+    -fx-border-color: #c7cfda;
+    -fx-border-radius: 5;
+    -fx-background-radius: 5;
+}
+
+.impact-depth-spinner {
+    -fx-max-width: 82;
 }
 
 .graph-canvas {

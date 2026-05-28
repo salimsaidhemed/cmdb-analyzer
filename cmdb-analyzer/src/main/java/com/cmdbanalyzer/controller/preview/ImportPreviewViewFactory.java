@@ -5,6 +5,8 @@ import com.cmdbanalyzer.service.filter.CmdbSearchService;
 import com.cmdbanalyzer.service.filter.FilterResult;
 import com.cmdbanalyzer.ui.graph.GraphNeighborhoodService;
 import com.cmdbanalyzer.ui.graph.GraphTabView;
+import com.cmdbanalyzer.ui.impact.ImpactAnalysisRequestHandler;
+import com.cmdbanalyzer.ui.impact.ImpactTabView;
 import javafx.animation.PauseTransition;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.property.ReadOnlyStringWrapper;
@@ -51,7 +53,9 @@ public class ImportPreviewViewFactory {
     private final Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler;
     private final Consumer<ImportPreviewViewModel.ValidationIssuePreviewRow> issueSelectionHandler;
     private final Consumer<Consumer<String>> graphSelectionHandlerRegistrar;
+    private final Consumer<ImpactSelectionHandler> impactSelectionHandlerRegistrar;
     private final Consumer<String> graphRelationshipSelectionHandler;
+    private final ImpactAnalysisRequestHandler impactAnalysisRequestHandler;
 
     public ImportPreviewViewFactory(
             Consumer<ImportPreviewViewModel.SheetPreviewRow> sheetSelectionHandler,
@@ -59,14 +63,18 @@ public class ImportPreviewViewFactory {
             Consumer<ImportPreviewViewModel.RelationshipPreviewRow> relationshipSelectionHandler,
             Consumer<ImportPreviewViewModel.ValidationIssuePreviewRow> issueSelectionHandler,
             Consumer<Consumer<String>> graphSelectionHandlerRegistrar,
-            Consumer<String> graphRelationshipSelectionHandler
+            Consumer<ImpactSelectionHandler> impactSelectionHandlerRegistrar,
+            Consumer<String> graphRelationshipSelectionHandler,
+            ImpactAnalysisRequestHandler impactAnalysisRequestHandler
     ) {
         this.sheetSelectionHandler = sheetSelectionHandler;
         this.ciSelectionHandler = ciSelectionHandler;
         this.relationshipSelectionHandler = relationshipSelectionHandler;
         this.issueSelectionHandler = issueSelectionHandler;
         this.graphSelectionHandlerRegistrar = graphSelectionHandlerRegistrar;
+        this.impactSelectionHandlerRegistrar = impactSelectionHandlerRegistrar;
         this.graphRelationshipSelectionHandler = graphRelationshipSelectionHandler;
+        this.impactAnalysisRequestHandler = impactAnalysisRequestHandler;
     }
 
     public Node create(ImportPreviewViewModel viewModel) {
@@ -226,11 +234,19 @@ public class ImportPreviewViewFactory {
                 ciId -> findCiRow(viewModel, ciId).ifPresent(ciSelectionHandler),
                 graphRelationshipSelectionHandler
         );
+        ImpactTabView impactTabView = new ImpactTabView(
+                impactAnalysisRequestHandler,
+                ciId -> findCiRow(viewModel, ciId).ifPresent(ciSelectionHandler)
+        );
         graphSelectionHandlerRegistrar.accept(graphTabView::showSelection);
+        impactSelectionHandlerRegistrar.accept((ciId, ciName) -> impactTabView.showSelection(ciId, ciName));
         TableView<ImportPreviewViewModel.SheetPreviewRow> sheetsTable = createSheetsTable(viewModel);
         TableView<ImportPreviewViewModel.ConfigurationItemPreviewRow> ciTable = createConfigurationItemsTable(
                 viewModel,
-                graphTabView::showSelection
+                ciId -> {
+                    graphTabView.showSelection(ciId);
+                    impactTabView.showSelection(ciId, ciName(viewModel, ciId));
+                }
         );
         TableView<ImportPreviewViewModel.RelationshipPreviewRow> relationshipTable = createRelationshipsTable(viewModel);
         TableView<ImportPreviewViewModel.ValidationIssuePreviewRow> issueTable = createIssuesTable(viewModel);
@@ -240,6 +256,7 @@ public class ImportPreviewViewFactory {
                 tab("Configuration Items", ciTable),
                 tab("Relationships", relationshipTable),
                 tab("Graph", graphTabView.node()),
+                tab("Impact", impactTabView.node()),
                 tab("Issues", issueTable),
                 tab("Warnings", warningTable)
         );
@@ -501,6 +518,12 @@ public class ImportPreviewViewFactory {
                 .findFirst();
     }
 
+    private String ciName(ImportPreviewViewModel viewModel, String ciId) {
+        return findCiRow(viewModel, ciId)
+                .map(ImportPreviewViewModel.ConfigurationItemPreviewRow::name)
+                .orElse(null);
+    }
+
     private <T> TableColumn<T, String> stringColumn(String title, double width, ValueProvider<T, String> valueProvider) {
         TableColumn<T, String> column = new TableColumn<>(title);
         column.setPrefWidth(width);
@@ -518,6 +541,11 @@ public class ImportPreviewViewFactory {
     @FunctionalInterface
     private interface ValueProvider<T, R> {
         R value(T row);
+    }
+
+    @FunctionalInterface
+    public interface ImpactSelectionHandler {
+        void showSelection(String ciId, String ciName);
     }
 
     private record PreviewTables(
