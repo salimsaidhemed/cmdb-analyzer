@@ -1,6 +1,8 @@
 package com.cmdbanalyzer.ui.graph;
 
 import com.cmdbanalyzer.graph.CmdbGraph;
+import com.cmdbanalyzer.ui.graph.GraphLayoutService.GraphLayout;
+import com.cmdbanalyzer.ui.graph.GraphLayoutService.GraphNodeLayout;
 import com.cmdbanalyzer.ui.graph.GraphNeighborhoodViewModel.GraphEdge;
 import com.cmdbanalyzer.ui.graph.GraphNeighborhoodViewModel.GraphNode;
 import com.cmdbanalyzer.ui.graph.GraphNeighborhoodViewModel.NodeRole;
@@ -8,7 +10,11 @@ import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -21,27 +27,34 @@ import javafx.scene.shape.Polygon;
 import org.kordamp.ikonli.javafx.FontIcon;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * Basic JavaFX graph canvas for CI-centered direct relationships.
+ * JavaFX graph canvas for CI-centered direct relationships.
  */
 public class GraphTabView {
 
-    private static final double CANVAS_WIDTH = 900;
-    private static final double CANVAS_HEIGHT = 560;
-
     private final CmdbGraph graph;
     private final GraphNeighborhoodService neighborhoodService;
+    private final GraphLayoutService layoutService = new GraphLayoutService();
     private final Consumer<String> ciSelectionHandler;
     private final Consumer<String> relationshipSelectionHandler;
     private final BorderPane root = new BorderPane();
+    private final ScrollPane scrollPane = new ScrollPane();
     private final Pane canvas = new Pane();
     private final Label selectedLabel = new Label("No CI selected");
     private final Label countLabel = new Label("0 nodes, 0 edges");
     private final Label noticeLabel = new Label("Select a CI to view its relationships.");
+    private final CheckBox showLabelsCheckBox = new CheckBox("Show labels");
+    private final Button fitButton = new Button("Fit to View");
+    private final Button resetButton = new Button("Reset Selection");
+    private final Map<String, VBox> nodeViews = new HashMap<>();
+    private final Map<String, Group> edgeViews = new HashMap<>();
+    private GraphNeighborhoodViewModel currentViewModel = GraphNeighborhoodViewModel.empty();
+    private GraphLayout currentLayout = layoutService.layout(currentViewModel);
+    private String selectedNodeId;
+    private String selectedRelationshipId;
 
     public GraphTabView(
             CmdbGraph graph,
@@ -62,17 +75,33 @@ public class GraphTabView {
     }
 
     public void showSelection(String ciId) {
-        GraphNeighborhoodViewModel viewModel = neighborhoodService.build(graph, ciId);
-        render(viewModel);
+        selectedNodeId = ciId;
+        selectedRelationshipId = null;
+        currentViewModel = neighborhoodService.build(graph, ciId);
+        currentLayout = layoutService.layout(currentViewModel);
+        render();
+        fitToView();
     }
 
     private void configure() {
         root.getStyleClass().add("graph-view");
         root.setTop(header());
-        root.setCenter(canvas);
+        root.setCenter(scrollPane);
+        scrollPane.getStyleClass().add("graph-scroll-pane");
+        scrollPane.setContent(canvas);
+        scrollPane.setPannable(true);
+        scrollPane.setFitToWidth(false);
+        scrollPane.setFitToHeight(false);
         canvas.getStyleClass().add("graph-canvas");
-        canvas.setMinSize(640, 420);
-        canvas.setPrefSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        showLabelsCheckBox.setSelected(false);
+        showLabelsCheckBox.getStyleClass().add("graph-control");
+        showLabelsCheckBox.setOnAction(event -> updateEdgeLabelVisibility());
+        fitButton.getStyleClass().add("filter-clear-button");
+        fitButton.setGraphic(new FontIcon("fas-expand-arrows-alt"));
+        fitButton.setOnAction(event -> fitToView());
+        resetButton.getStyleClass().add("filter-clear-button");
+        resetButton.setGraphic(new FontIcon("fas-undo"));
+        resetButton.setOnAction(event -> resetSelection());
     }
 
     private Node header() {
@@ -88,7 +117,7 @@ public class GraphTabView {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
         countLabel.getStyleClass().add("graph-count-label");
-        titleRow.getChildren().addAll(icon, title, spacer, countLabel);
+        titleRow.getChildren().addAll(icon, title, spacer, fitButton, resetButton, showLabelsCheckBox, countLabel);
 
         HBox summaryRow = new HBox(12);
         summaryRow.setAlignment(Pos.CENTER_LEFT);
@@ -96,16 +125,32 @@ public class GraphTabView {
         noticeLabel.getStyleClass().add("graph-notice-label");
         summaryRow.getChildren().addAll(selectedLabel, noticeLabel);
 
-        HBox legend = new HBox(12);
+        HBox legend = new HBox(14);
         legend.setAlignment(Pos.CENTER_LEFT);
+        Label direction = new Label("A -> B means A depends on B");
+        direction.getStyleClass().add("graph-direction-note");
         legend.getChildren().addAll(
+                sideLabel("Dependencies", "fas-arrow-left"),
                 legendItem("Selected CI", "selected"),
                 legendItem("Dependency", "dependency"),
-                legendItem("Dependent", "dependent")
+                legendItem("Dependent", "dependent"),
+                sideLabel("Dependents", "fas-arrow-right"),
+                direction
         );
 
         header.getChildren().addAll(titleRow, summaryRow, legend);
         return header;
+    }
+
+    private Node sideLabel(String text, String iconCode) {
+        HBox item = new HBox(6);
+        item.setAlignment(Pos.CENTER_LEFT);
+        FontIcon icon = new FontIcon(iconCode);
+        icon.getStyleClass().add("graph-side-icon");
+        Label label = new Label(text);
+        label.getStyleClass().add("graph-legend-label");
+        item.getChildren().addAll(icon, label);
+        return item;
     }
 
     private Node legendItem(String text, String style) {
@@ -119,34 +164,61 @@ public class GraphTabView {
         return item;
     }
 
-    private void render(GraphNeighborhoodViewModel viewModel) {
+    private void render() {
         canvas.getChildren().clear();
-        selectedLabel.setText(viewModel.selectedCiName() == null
+        nodeViews.clear();
+        edgeViews.clear();
+        selectedLabel.setText(currentViewModel.selectedCiName() == null
                 ? "No CI selected"
-                : "Selected CI: " + viewModel.selectedCiName());
-        countLabel.setText(viewModel.nodes().size() + " nodes, " + viewModel.edges().size() + " edges");
-        noticeLabel.setText(viewModel.message() == null ? "" : viewModel.message());
-        noticeLabel.setVisible(viewModel.message() != null && !viewModel.message().isBlank());
+                : "Selected CI: " + currentViewModel.selectedCiName());
+        countLabel.setText(currentViewModel.nodes().size() + " nodes, " + currentViewModel.edges().size() + " edges");
+        noticeLabel.setText(noticeText());
+        noticeLabel.setVisible(!noticeLabel.getText().isBlank());
         noticeLabel.setManaged(noticeLabel.isVisible());
+        canvas.setPrefSize(currentLayout.width(), currentLayout.height());
+        canvas.setMinSize(currentLayout.width(), currentLayout.height());
 
-        if (viewModel.nodes().isEmpty()) {
+        if (currentViewModel.nodes().isEmpty()) {
             canvas.getChildren().add(emptyState());
             return;
         }
 
-        Map<String, Point2D> positions = positions(viewModel.nodes());
+        canvas.getChildren().add(sideTitle("Dependencies", 82, 36));
+        canvas.getChildren().add(sideTitle("Selected CI", currentLayout.width() / 2 - 54, 36));
+        canvas.getChildren().add(sideTitle("Dependents", currentLayout.width() - 190, 36));
+
         Group edgeLayer = new Group();
         Group nodeLayer = new Group();
-        viewModel.edges().forEach(edge -> edgeLayer.getChildren().add(edgeNode(edge, positions)));
-        viewModel.nodes().forEach(node -> nodeLayer.getChildren().add(graphNode(node, positions.get(node.ciId()))));
+        currentViewModel.edges().forEach(edge -> edgeLayer.getChildren().add(edgeNode(edge)));
+        currentViewModel.nodes().forEach(node -> nodeLayer.getChildren().add(graphNode(node)));
         canvas.getChildren().addAll(edgeLayer, nodeLayer);
+        updateSelectionStyles();
+        updateEdgeLabelVisibility();
+    }
+
+    private String noticeText() {
+        if (currentViewModel.nodes().isEmpty()) {
+            return currentViewModel.message() == null ? "Select a CI to view its relationships." : currentViewModel.message();
+        }
+        if (currentViewModel.edges().isEmpty()) {
+            return "Selected CI has no direct relationships.";
+        }
+        return currentViewModel.message() == null ? "" : currentViewModel.message();
+    }
+
+    private Node sideTitle(String text, double x, double y) {
+        Label label = new Label(text);
+        label.getStyleClass().add("graph-side-title");
+        label.setLayoutX(x);
+        label.setLayoutY(y);
+        return label;
     }
 
     private Node emptyState() {
         VBox empty = new VBox(10);
         empty.getStyleClass().add("graph-empty-state");
         empty.setAlignment(Pos.CENTER);
-        empty.setPrefSize(CANVAS_WIDTH, CANVAS_HEIGHT);
+        empty.setPrefSize(currentLayout.width(), currentLayout.height());
         FontIcon icon = new FontIcon("fas-mouse-pointer");
         icon.getStyleClass().add("graph-empty-icon");
         Label title = new Label("Select a CI to view its relationships.");
@@ -158,91 +230,166 @@ public class GraphTabView {
         return empty;
     }
 
-    private Node graphNode(GraphNode node, Point2D point) {
-        VBox labelBox = new VBox(2);
+    private Node graphNode(GraphNode node) {
+        GraphNodeLayout layout = currentLayout.nodes().get(node.ciId());
+        VBox labelBox = new VBox(3);
         labelBox.setAlignment(Pos.CENTER);
         labelBox.getStyleClass().addAll("graph-node", roleClass(node.role()));
-        labelBox.setLayoutX(point.getX() - 58);
-        labelBox.setLayoutY(point.getY() - 30);
-        labelBox.setPrefSize(116, 60);
-        Label name = new Label(safe(node.name()));
+        labelBox.setLayoutX(layout.x());
+        labelBox.setLayoutY(layout.y());
+        labelBox.setPrefSize(layout.width(), layout.height());
+        labelBox.setMinSize(layout.width(), layout.height());
+        labelBox.setMaxSize(layout.width(), layout.height());
+
+        Label name = new Label(displayName(node.name()));
         name.getStyleClass().add("graph-node-title");
         name.setWrapText(true);
+        name.setMaxWidth(layout.width() - 22);
         Label ciClass = new Label(safe(node.ciClass()));
         ciClass.getStyleClass().add("graph-node-subtitle");
+        ciClass.setMaxWidth(layout.width() - 22);
         labelBox.getChildren().addAll(name, ciClass);
-        labelBox.setOnMouseClicked(event -> ciSelectionHandler.accept(node.ciId()));
+        labelBox.setOnMouseClicked(event -> {
+            selectedNodeId = node.ciId();
+            selectedRelationshipId = null;
+            updateSelectionStyles();
+            ciSelectionHandler.accept(node.ciId());
+        });
+        labelBox.setOnMouseEntered(event -> highlightConnectedEdges(node.ciId(), true));
+        labelBox.setOnMouseExited(event -> highlightConnectedEdges(node.ciId(), false));
+        Tooltip.install(labelBox, new Tooltip(nodeTooltip(node)));
+        nodeViews.put(node.ciId(), labelBox);
         return labelBox;
     }
 
-    private Node edgeNode(GraphEdge edge, Map<String, Point2D> positions) {
-        Point2D source = positions.get(edge.sourceCiId());
-        Point2D target = positions.get(edge.targetCiId());
-        if (source == null || target == null) {
+    private Node edgeNode(GraphEdge edge) {
+        GraphNodeLayout sourceLayout = currentLayout.nodes().get(edge.sourceCiId());
+        GraphNodeLayout targetLayout = currentLayout.nodes().get(edge.targetCiId());
+        if (sourceLayout == null || targetLayout == null) {
             return new Group();
         }
+        Point2D source = new Point2D(sourceLayout.centerX(), sourceLayout.centerY());
+        Point2D target = new Point2D(targetLayout.centerX(), targetLayout.centerY());
+        Point2D start = trim(source, target);
+        Point2D end = trim(target, source);
         Group group = new Group();
-        Point2D start = trim(source, target, 68);
-        Point2D end = trim(target, source, 68);
+        group.getStyleClass().add("graph-edge-group");
+
         Line line = new Line(start.getX(), start.getY(), end.getX(), end.getY());
         line.getStyleClass().add("graph-edge");
+        Line hitLine = new Line(start.getX(), start.getY(), end.getX(), end.getY());
+        hitLine.getStyleClass().add("graph-edge-hit-area");
         Polygon arrow = arrowHead(start, end);
         arrow.getStyleClass().add("graph-edge-arrow");
         Label label = new Label(safe(edge.relationshipType()));
         label.getStyleClass().add("graph-edge-label");
-        label.setLayoutX((start.getX() + end.getX()) / 2 - 34);
-        label.setLayoutY((start.getY() + end.getY()) / 2 - 13);
-        group.getChildren().addAll(line, arrow, label);
-        group.setOnMouseClicked(event -> relationshipSelectionHandler.accept(edge.relationshipId()));
+        label.setLayoutX((start.getX() + end.getX()) / 2 - 52);
+        label.setLayoutY((start.getY() + end.getY()) / 2 - 15);
+        group.getChildren().addAll(hitLine, line, arrow, label);
+        group.setOnMouseClicked(event -> {
+            selectedRelationshipId = edge.relationshipId();
+            selectedNodeId = null;
+            updateSelectionStyles();
+            relationshipSelectionHandler.accept(edge.relationshipId());
+            event.consume();
+        });
+        group.setOnMouseEntered(event -> setEdgeState(edge.relationshipId(), "graph-edge-hover", true));
+        group.setOnMouseExited(event -> setEdgeState(edge.relationshipId(), "graph-edge-hover", false));
+        Tooltip.install(group, new Tooltip(edgeTooltip(edge)));
+        edgeViews.put(edge.relationshipId(), group);
         return group;
     }
 
-    private Map<String, Point2D> positions(List<GraphNode> nodes) {
-        Map<String, Point2D> positions = new HashMap<>();
-        GraphNode selected = nodes.stream()
-                .filter(node -> node.role() == NodeRole.SELECTED)
-                .findFirst()
-                .orElse(nodes.get(0));
-        Point2D center = new Point2D(CANVAS_WIDTH / 2, CANVAS_HEIGHT / 2);
-        positions.put(selected.ciId(), center);
-
-        List<GraphNode> dependents = nodes.stream().filter(node -> node.role() == NodeRole.DEPENDENT).toList();
-        List<GraphNode> dependencies = nodes.stream().filter(node -> node.role() == NodeRole.DEPENDENCY).toList();
-        placeSide(positions, dependents, 170, 120, true);
-        placeSide(positions, dependencies, CANVAS_WIDTH - 170, 120, false);
-        return positions;
-    }
-
-    private void placeSide(Map<String, Point2D> positions, List<GraphNode> nodes, double x, double top, boolean left) {
-        if (nodes.isEmpty()) {
+    private void fitToView() {
+        if (currentLayout.width() <= 0 || currentLayout.height() <= 0) {
             return;
         }
-        double spacing = Math.min(84, (CANVAS_HEIGHT - 2 * top) / Math.max(1, nodes.size() - 1));
-        double startY = nodes.size() == 1 ? CANVAS_HEIGHT / 2 : top;
-        for (int index = 0; index < nodes.size(); index++) {
-            double offset = nodes.size() == 1 ? 0 : index * spacing;
-            double stagger = index % 2 == 0 ? 0 : (left ? -26 : 26);
-            positions.put(nodes.get(index).ciId(), new Point2D(x + stagger, startY + offset));
+        scrollPane.setHvalue(0.5);
+        scrollPane.setVvalue(0.5);
+    }
+
+    private void resetSelection() {
+        selectedNodeId = currentViewModel.selectedCiId();
+        selectedRelationshipId = null;
+        updateSelectionStyles();
+    }
+
+    private void updateSelectionStyles() {
+        nodeViews.forEach((ciId, node) -> setStyle(node, "graph-node-active", ciId.equals(selectedNodeId)));
+        edgeViews.forEach((relationshipId, edge) -> setEdgeState(
+                relationshipId,
+                "graph-edge-selected",
+                relationshipId.equals(selectedRelationshipId)
+        ));
+    }
+
+    private void updateEdgeLabelVisibility() {
+        boolean show = showLabelsCheckBox.isSelected();
+        edgeViews.values().forEach(edge -> edge.getChildren().stream()
+                .filter(Label.class::isInstance)
+                .forEach(label -> {
+                    label.setVisible(show);
+                    label.setManaged(show);
+                }));
+    }
+
+    private void highlightConnectedEdges(String ciId, boolean highlight) {
+        currentViewModel.edges().stream()
+                .filter(edge -> ciId.equals(edge.sourceCiId()) || ciId.equals(edge.targetCiId()))
+                .forEach(edge -> setEdgeState(edge.relationshipId(), "graph-edge-connected", highlight));
+    }
+
+    private void setEdgeState(String relationshipId, String styleClass, boolean enabled) {
+        Group edge = edgeViews.get(relationshipId);
+        if (edge == null) {
+            return;
+        }
+        setStyle(edge, styleClass, enabled);
+    }
+
+    private void setStyle(Node node, String styleClass, boolean enabled) {
+        if (enabled && !node.getStyleClass().contains(styleClass)) {
+            node.getStyleClass().add(styleClass);
+        } else if (!enabled) {
+            node.getStyleClass().remove(styleClass);
         }
     }
 
-    private Point2D trim(Point2D from, Point2D to, double distance) {
+    private Point2D trim(Point2D from, Point2D to) {
         Point2D vector = to.subtract(from);
         if (vector.magnitude() == 0) {
             return from;
         }
+        double distance = GraphLayoutService.NODE_WIDTH / 2 + 8;
         return from.add(vector.normalize().multiply(distance));
     }
 
     private Polygon arrowHead(Point2D start, Point2D end) {
         Point2D direction = end.subtract(start).normalize();
         Point2D normal = new Point2D(-direction.getY(), direction.getX());
-        Point2D base = end.subtract(direction.multiply(12));
+        Point2D base = end.subtract(direction.multiply(14));
         return new Polygon(
                 end.getX(), end.getY(),
-                base.add(normal.multiply(5)).getX(), base.add(normal.multiply(5)).getY(),
-                base.subtract(normal.multiply(5)).getX(), base.subtract(normal.multiply(5)).getY()
+                base.add(normal.multiply(6)).getX(), base.add(normal.multiply(6)).getY(),
+                base.subtract(normal.multiply(6)).getX(), base.subtract(normal.multiply(6)).getY()
         );
+    }
+
+    private String nodeTooltip(GraphNode node) {
+        return "Name: " + safe(node.name())
+                + "\nClass: " + safe(node.ciClass())
+                + "\nSheet: " + safe(node.sourceSheet())
+                + "\nRow: " + (node.sourceRow() <= 0 ? "-" : node.sourceRow());
+    }
+
+    private String edgeTooltip(GraphEdge edge) {
+        return "Relationship: " + safe(edge.relationshipType())
+                + "\nDirection: " + safe(edge.sourceCiId()) + " -> " + safe(edge.targetCiId());
+    }
+
+    private String displayName(String value) {
+        String safeValue = safe(value);
+        return safeValue.length() > 34 ? safeValue.substring(0, 31) + "..." : safeValue;
     }
 
     private String roleClass(NodeRole role) {

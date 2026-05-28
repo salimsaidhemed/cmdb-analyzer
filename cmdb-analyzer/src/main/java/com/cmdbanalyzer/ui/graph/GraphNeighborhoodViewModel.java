@@ -30,7 +30,14 @@ public record GraphNeighborhoodViewModel(
         );
     }
 
-    public record GraphNode(String ciId, String name, String ciClass, NodeRole role) {
+    public record GraphNode(
+            String ciId,
+            String name,
+            String ciClass,
+            String sourceSheet,
+            int sourceRow,
+            NodeRole role
+    ) {
     }
 
     public record GraphEdge(
